@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard | Biome</title>
+  <link rel="stylesheet" href="admin-dashboard.css" />
+</head> 
+<body>
+  <div class="dashboard">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <h2>Biome Admin</h2>
+      </div>
+      <nav class="sidebar-nav">
+        <ul>
+          <li><a href="#" class="active" data-view="pending">Pending Reviews <span class="badge" id="pendingBadge">0</span></a></li>
+          <li><a href="#" data-view="approved">Published <span class="badge" id="approvedBadge">0</span></a></li>
+          <li><a href="#" data-view="rejected">Rejected <span class="badge" id="rejectedBadge">0</span></a></li>
+          <li><a href="#" data-view="all">All Listings</a></li>
+          <li><a href="#" data-view="users">Users</a></li>
+        </ul>
+      </nav>
+      <div class="sidebar-footer">
+        <button id="logoutBtn" class="logout-btn">Logout</button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Header -->
+      <header class="main-header">
+        <h1 id="pageTitle">Pending Reviews</h1>
+        <div class="header-actions">
+          <button id="refreshBtn" class="btn btn-outline">Refresh</button>
+        </div>
+      </header>
+
+      <!-- Metrics -->
+      <section class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-value" id="totalCount">0</div>
+          <div class="metric-label">Total Listings</div>
+        </div>
+        <div class="metric-card pending">
+          <div class="metric-value" id="pendingCount">0</div>
+          <div class="metric-label">Pending</div>
+        </div>
+        <div class="metric-card approved">
+          <div class="metric-value" id="approvedCount">0</div>
+          <div class="metric-label">Published</div>
+        </div>
+        <div class="metric-card rejected">
+          <div class="metric-value" id="rejectedCount">0</div>
+          <div class="metric-label">Rejected</div>
+        </div>
+      </section>
+
+      <!-- Search & Filter -->
+      <section class="filters-bar">
+        <div class="search-wrapper">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="searchInput" placeholder="Search by title, seller or suburb..." />
+        </div>
+        <select id="statusFilter">
+          <option value="pending">Pending</option>
+          <option value="approved">Published</option>
+          <option value="rejected">Rejected</option>
+          <option value="all">All</option>
+        </select>
+      </section>
+
+      <!-- Listings Grid -->
+      <section class="listings-section">
+        <div id="listingsContainer" class="listings-grid"></div>
+        <div id="emptyState" class="empty-state" style="display:none;">
+          <div class="empty-icon">📭</div>
+          <h3>No listings found</h3>
+          <p>There are no listings in this view.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Detail Modal -->
+  <div id="detailModal" class="modal-overlay" style="display:none;">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modalTitle">Listing Details</h2>
+        <button class="modal-close" id="modalCloseBtn">×</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-footer">
+        <button id="modalClose" class="btn btn-outline">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Supabase & Auth -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="auth.js"></script>
+  <script src="admin-dashbord.js"></script>
+</body>
+</html>

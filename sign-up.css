@@ -1,0 +1,559 @@
+/* ==========================================================
+   BIOME PROPERTY MARKETPLACE
+   SIGN-UP PAGE
+========================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap');
+
+/* ==========================================================
+   RESET
+========================================================== */
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:'Montserrat',sans-serif;
+}
+
+:root{
+
+    --primary:#166534;
+    --primary-hover:#15803d;
+
+    --secondary:#22c55e;
+
+    --background:#f8fafc;
+
+    --input:#f4f4f5;
+
+    --border:#d4d4d8;
+
+    --text:#18181b;
+
+    --muted:#71717a;
+
+    --danger:#dc2626;
+
+    --success:#16a34a;
+
+    --info:#0284c7;
+
+    --white:#ffffff;
+
+}
+
+/* ==========================================================
+   BODY
+========================================================== */
+
+body{
+
+    background:
+    linear-gradient(
+        rgba(0,0,0,.45),
+        rgba(0,0,0,.45)
+    ),
+    url("Assets/Images/hero-background.jpg");
+
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
+
+    min-height:100vh;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    padding:40px 20px;
+}
+
+/* ==========================================================
+   CONTAINER
+========================================================== */
+
+.container{
+
+    width:960px;
+    max-width:100%;
+
+    background:rgba(255,255,255,.97);
+
+    backdrop-filter:blur(10px);
+
+    border-radius:28px;
+
+    box-shadow:
+    0 25px 60px rgba(0,0,0,.30);
+
+    padding:60px 70px;
+}
+
+/* ==========================================================
+   FORM
+========================================================== */
+
+form{
+
+    width:100%;
+
+    display:flex;
+    flex-direction:column;
+}
+
+/* ==========================================================
+   LOGO
+========================================================== */
+
+.logo{
+
+    text-align:center;
+
+    margin-bottom:30px;
+}
+
+.logo h1{
+
+    color:var(--primary);
+
+    font-size:42px;
+
+    font-weight:700;
+
+    letter-spacing:1px;
+}
+
+.logo p{
+
+    color:var(--muted);
+
+    margin-top:8px;
+
+    font-size:14px;
+}
+
+/* ==========================================================
+   HEADINGS
+========================================================== */
+
+h2{
+
+    text-align:center;
+
+    color:var(--text);
+
+    margin-bottom:10px;
+
+    font-size:32px;
+}
+
+.subtitle{
+
+    text-align:center;
+
+    color:var(--muted);
+
+    margin-bottom:40px;
+
+    line-height:24px;
+
+    font-size:15px;
+}
+
+/* ==========================================================
+   GRID
+========================================================== */
+
+.form-row{
+
+    display:grid;
+
+    grid-template-columns:1fr 1fr;
+
+    gap:24px;
+
+    margin-bottom:20px;
+}
+
+/* ==========================================================
+   LABELS
+========================================================== */
+
+label{
+
+    display:block;
+
+    margin-bottom:8px;
+
+    font-weight:600;
+
+    font-size:14px;
+
+    color:#333;
+}
+
+/* ==========================================================
+   INPUTS
+========================================================== */
+
+input,
+select{
+
+    width:100%;
+
+    padding:16px 18px;
+
+    background:var(--input);
+
+    border:2px solid transparent;
+
+    border-radius:14px;
+
+    font-size:15px;
+
+    transition:.25s;
+
+    outline:none;
+}
+
+input::placeholder{
+
+    color:#a1a1aa;
+}
+
+input:focus,
+select:focus{
+
+    background:white;
+
+    border-color:var(--secondary);
+
+    box-shadow:
+    0 0 0 4px rgba(34,197,94,.15);
+}
+
+input:hover,
+select:hover{
+
+    background:white;
+}
+
+/* ==========================================================
+   PASSWORD INFO
+========================================================== */
+
+.password-info{
+
+    margin-top:10px;
+
+    margin-bottom:30px;
+
+    font-size:13px;
+
+    color:var(--muted);
+
+    line-height:20px;
+}
+
+/* ==========================================================
+   BUTTON
+========================================================== */
+
+button{
+
+    width:100%;
+
+    padding:18px;
+
+    border:none;
+
+    border-radius:50px;
+
+    background:var(--primary);
+
+    color:white;
+
+    cursor:pointer;
+
+    font-size:15px;
+
+    font-weight:600;
+
+    letter-spacing:.5px;
+
+    transition:.30s;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    gap:10px;
+}
+
+button:hover{
+
+    background:var(--primary-hover);
+
+    transform:translateY(-2px);
+
+    box-shadow:
+    0 15px 30px rgba(22,101,52,.25);
+}
+
+button:disabled{
+
+    opacity:.75;
+
+    cursor:not-allowed;
+
+    transform:none;
+}
+
+/* ==========================================================
+   SPINNER
+========================================================== */
+
+.spinner{
+
+    width:18px;
+
+    height:18px;
+
+    border:2px solid rgba(255,255,255,.35);
+
+    border-top:2px solid white;
+
+    border-radius:50%;
+
+    animation:spin .7s linear infinite;
+}
+
+@keyframes spin{
+
+    to{
+
+        transform:rotate(360deg);
+    }
+}
+
+/* ==========================================================
+   STATUS MESSAGE
+========================================================== */
+
+.status-message{
+
+    display:none;
+
+    margin-top:22px;
+
+    padding:16px;
+
+    border-radius:14px;
+
+    text-align:center;
+
+    font-size:14px;
+
+    font-weight:500;
+
+    line-height:22px;
+}
+
+/* SUCCESS */
+
+.status-message.success{
+
+    display:block;
+
+    background:#dcfce7;
+
+    color:#166534;
+
+    border:1px solid #22c55e;
+}
+
+/* ERROR */
+
+.status-message.error{
+
+    display:block;
+
+    background:#fee2e2;
+
+    color:#b91c1c;
+
+    border:1px solid #ef4444;
+}
+
+/* INFO */
+
+.status-message.info{
+
+    display:block;
+
+    background:#e0f2fe;
+
+    color:#0369a1;
+
+    border:1px solid #38bdf8;
+}
+
+/* ==========================================================
+   SIGN IN LINK
+========================================================== */
+
+.signin-link{
+
+    margin-top:35px;
+
+    text-align:center;
+
+    color:var(--muted);
+
+    font-size:14px;
+}
+
+.signin-link a{
+
+    color:var(--primary);
+
+    text-decoration:none;
+
+    font-weight:600;
+
+    transition:.25s;
+}
+
+.signin-link a:hover{
+
+    color:var(--secondary);
+}
+
+/* ==========================================================
+   INVALID INPUT
+========================================================== */
+
+input:invalid:focus,
+select:invalid:focus{
+
+    border-color:#ef4444;
+
+    box-shadow:
+    0 0 0 4px rgba(239,68,68,.12);
+}
+
+/* ==========================================================
+   SCROLLBAR
+========================================================== */
+
+::-webkit-scrollbar{
+
+    width:10px;
+}
+
+::-webkit-scrollbar-thumb{
+
+    background:#bdbdbd;
+
+    border-radius:10px;
+}
+
+::-webkit-scrollbar-thumb:hover{
+
+    background:#8d8d8d;
+}
+
+/* ==========================================================
+   TABLET
+========================================================== */
+
+@media(max-width:900px){
+
+    .container{
+
+        padding:50px 40px;
+    }
+
+    .form-row{
+
+        grid-template-columns:1fr;
+    }
+
+    h2{
+
+        font-size:28px;
+    }
+
+}
+
+/* ==========================================================
+   MOBILE
+========================================================== */
+
+@media(max-width:600px){
+
+    body{
+
+        padding:20px;
+    }
+
+    .container{
+
+        padding:35px 25px;
+
+        border-radius:20px;
+    }
+
+    .logo h1{
+
+        font-size:34px;
+    }
+
+    h2{
+
+        font-size:24px;
+    }
+
+    .subtitle{
+
+        font-size:14px;
+    }
+
+    input,
+    select{
+
+        padding:15px;
+    }
+
+    button{
+
+        padding:16px;
+    }
+
+}
+
+/* ==========================================================
+   SMALL MOBILE
+========================================================== */
+
+@media(max-width:420px){
+
+    .container{
+
+        padding:25px 18px;
+    }
+
+    .logo h1{
+
+        font-size:30px;
+    }
+
+    h2{
+
+        font-size:22px;
+    }
+
+}

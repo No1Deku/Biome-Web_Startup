@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Property Listings | Biome</title>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="property-listings.css">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+</head>
+<body>
+
+    <!-- =====================================================
+         FILTERS CONTAINER
+    ====================================================== -->
+    <section class="filters-container" id="filtersContainer">
+
+        <!-- Search Row -->
+        <div class="top-row">
+            <div class="search-bar">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input
+                    type="text"
+                    id="searchInput"
+                    name="search"
+                    placeholder="Search spaces, cities, or suburbs..."
+                    autocomplete="off"
+                >
+            </div>
+
+            <div class="view-buttons">
+                <button id="filterToggleBtn" type="button" aria-label="Toggle filters" aria-expanded="true">
+                    <i class="fa-solid fa-sliders"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Property Type Categories (dynamic) -->
+        <div class="categories" id="categoryButtons">
+            <!-- Populated by JavaScript from property_types table -->
+        </div>
+
+        <hr>
+
+        <!-- Extended Filters -->
+        <div id="extendedFilters" class="filter-panel">
+            <div class="filter-box">
+                <div class="filter-header">
+                    <h3>Filters</h3>
+                    <button id="closeFiltersBtn" type="button" aria-label="Close filters">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <div class="filters-grid" id="filtersGrid">
+                    <!-- Property Type -->
+                    <div class="filter-group">
+                        <label for="propertyTypeFilter">Property Type</label>
+                        <select id="propertyTypeFilter" name="propertyType">
+                            <option value="">All Types</option>
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+
+                    <!-- Min Price -->
+                    <div class="filter-group">
+                        <label for="minPrice">Minimum Price (ZAR)</label>
+                        <input
+                            type="number"
+                            id="minPrice"
+                            name="minPrice"
+                            placeholder="0"
+                            min="0"
+                            step="1000"
+                        >
+                    </div>
+
+                    <!-- Max Price -->
+                    <div class="filter-group">
+                        <label for="maxPrice">Maximum Price (ZAR)</label>
+                        <input
+                            type="number"
+                            id="maxPrice"
+                            name="maxPrice"
+                            placeholder="Any"
+                            min="0"
+                            step="1000"
+                        >
+                    </div>
+
+                    <!-- Bedrooms -->
+                    <div class="filter-group">
+                        <label for="bedroomsFilter">Bedrooms</label>
+                        <select id="bedroomsFilter" name="bedrooms">
+                            <option value="">Any</option>
+                            <option value="1">1+</option>
+                            <option value="2">2+</option>
+                            <option value="3">3+</option>
+                            <option value="4">4+</option>
+                            <option value="5">5+</option>
+                        </select>
+                    </div>
+
+                    <!-- Bathrooms -->
+                    <div class="filter-group">
+                        <label for="bathroomsFilter">Bathrooms</label>
+                        <select id="bathroomsFilter" name="bathrooms">
+                            <option value="">Any</option>
+                            <option value="1">1+</option>
+                            <option value="2">2+</option>
+                            <option value="3">3+</option>
+                            <option value="4">4+</option>
+                        </select>
+                    </div>
+
+                    <!-- Province -->
+                    <div class="filter-group">
+                        <label for="provinceFilter">Province</label>
+                        <input
+                            type="text"
+                            id="provinceFilter"
+                            name="province"
+                            placeholder="e.g. Gauteng"
+                        >
+                    </div>
+
+                    <!-- City -->
+                    <div class="filter-group">
+                        <label for="cityFilter">City</label>
+                        <input
+                            type="text"
+                            id="cityFilter"
+                            name="city"
+                            placeholder="e.g. Johannesburg"
+                        >
+                    </div>
+
+                    <!-- Suburb -->
+                    <div class="filter-group">
+                        <label for="suburbFilter">Suburb</label>
+                        <input
+                            type="text"
+                            id="suburbFilter"
+                            name="suburb"
+                            placeholder="e.g. Sandton"
+                        >
+                    </div>
+
+                    <!-- Sort By -->
+                    <div class="filter-group">
+                        <label for="sortBy">Sort By</label>
+                        <select id="sortBy" name="sortBy">
+                            <option value="newest">Newest First</option>
+                            <option value="oldest">Oldest First</option>
+                            <option value="price_asc">Price: Low to High</option>
+                            <option value="price_desc">Price: High to Low</option>
+                            <option value="bedrooms_desc">Most Bedrooms</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="filter-actions">
+                    <button id="applyFiltersBtn" class="btn btn-primary">
+                        <i class="fa-solid fa-filter"></i> Apply Filters
+                    </button>
+                    <button id="resetFiltersBtn" class="btn btn-secondary">
+                        <i class="fa-solid fa-rotate-left"></i> Reset
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- =====================================================
+         RESULTS SUMMARY
+    ====================================================== -->
+    <section class="results-summary" id="resultsSummary">
+        <p id="resultsCount">Loading listings...</p>
+    </section>
+
+    <!-- =====================================================
+         LISTINGS GRID
+    ====================================================== -->
+    <section class="listings-section">
+        <div class="listings-grid" id="listingsGrid">
+            <!-- Populated by JavaScript -->
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="loading-state" style="display:none;">
+            <div class="spinner"></div>
+            <p>Searching properties...</p>
+        </div>
+
+        <!-- Empty State (enhanced with Reset Filters button) -->
+        <div id="emptyState" class="empty-state" style="display:none;">
+            <div class="empty-icon">🔍</div>
+            <h3>No properties found</h3>
+            <p>Try adjusting your filters or search another location.</p>
+            <button id="emptyResetBtn" class="btn btn-secondary empty-reset-btn">
+                <i class="fa-solid fa-rotate-left"></i> Reset Filters
+            </button>
+        </div>
+
+        <!-- Error State -->
+        <div id="errorState" class="error-state" style="display:none;">
+            <div class="error-icon">⚠️</div>
+            <h3>Unable to load listings</h3>
+            <p>Please try again later or refresh the page.</p>
+            <button class="btn btn-secondary" onclick="location.reload()">
+                <i class="fa-solid fa-arrows-rotate"></i> Refresh Page
+            </button>
+        </div>
+    </section>
+
+    <!-- =====================================================
+         PAGINATION
+    ====================================================== -->
+    <section class="pagination" id="pagination" style="display:none;">
+        <button id="prevPageBtn" class="btn btn-secondary" disabled>
+            <i class="fa-solid fa-chevron-left"></i> Previous
+        </button>
+        <span id="pageInfo">Page 1</span>
+        <button id="nextPageBtn" class="btn btn-secondary">
+            Next <i class="fa-solid fa-chevron-right"></i>
+        </button>
+    </section>
+
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="auth.js"></script>
+    <script src="property-listings.js"></script>
+</body>
+</html>

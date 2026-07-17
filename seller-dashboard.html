@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>Seller Dashboard | Biome</title>
+
+    <!-- Styles -->
+    <link
+        rel="stylesheet"
+        href="seller-dashboard.css">
+
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- Authentication -->
+    <script defer src="auth.js"></script>
+
+    <!-- Dashboard Logic -->
+    <script defer src="seller-dashboard.js"></script>
+
+</head>
+
+<body>
+
+<div class="dashboard">
+
+    <!-- =====================================================
+         SIDEBAR
+    ====================================================== -->
+
+    <aside class="sidebar">
+
+        <div class="sidebar-top">
+
+            <!-- Brand -->
+
+            <div class="sidebar-brand">
+
+                <h2 class="logo">
+                    Biome
+                </h2>
+
+                <p class="logo-subtitle">
+                    Seller Portal
+                </p>
+
+            </div>
+
+            <!-- Navigation -->
+
+            <nav class="sidebar-nav">
+
+                <button
+                    type="button"
+                    class="nav-btn active"
+                    id="dashboardBtn">
+
+                    Dashboard
+
+                </button>
+
+                <button
+                    type="button"
+                    class="nav-btn"
+                    id="settingsBtn">
+
+                    Settings
+
+                </button>
+
+            </nav>
+
+        </div>
+
+        <!-- Seller Footer -->
+
+        <div class="sidebar-footer">
+
+            <div class="seller-info">
+
+                <span class="welcome-text">
+                    Logged in as
+                </span>
+
+                <strong id="companyLabel">
+                    Loading...
+                </strong>
+
+            </div>
+
+            <button
+                id="logoutBtn"
+                class="logout-btn"
+                type="button">
+
+                Logout
+
+            </button>
+
+        </div>
+
+    </aside>
+
+
+
+    <!-- =====================================================
+         MAIN CONTENT
+    ====================================================== -->
+
+    <main class="main-content">
+
+        <!-- ================= Header ================= -->
+
+        <header class="main-header">
+
+            <div>
+
+                <h1 id="welcomeMessage">
+                    Welcome Back
+                </h1>
+
+                <p>
+                    Manage your property listings, drafts and submissions.
+                </p>
+
+            </div>
+
+            <div class="header-actions">
+
+                <button
+                    id="createBtn"
+                    class="primary-btn"
+                    type="button">
+
+                    + Create Listing
+
+                </button>
+
+            </div>
+
+        </header>
+
+
+
+        <!-- ================= Metrics ================= -->
+
+        <section class="metrics-grid">
+
+            <div class="metric-card">
+
+                <h3
+                    id="totalListings"
+                    class="metric-value">
+
+                    0
+
+                </h3>
+
+                <p class="metric-label">
+                    Total Listings
+                </p>
+
+            </div>
+
+
+            <div class="    metric-card draft">
+
+                <h3
+                    id="draftListings"
+                    class="metric-value">
+
+                    0
+
+                </h3>
+
+                <p class="metric-label">
+                    Draft Listings
+                </p>
+
+            </div>
+
+
+            <div class="metric-card pending">
+
+                <h3
+                    id="pendingListings"
+                    class="metric-value">
+
+                    0
+
+                </h3>
+
+                <p class="metric-label">
+                    Pending Review
+                </p>
+
+            </div>
+
+
+            <div class="metric-card published">
+
+                <h3
+                    id="publishedListings"
+                    class="metric-value">
+
+                    0
+
+                </h3>
+
+                <p class="metric-label">
+                    Published
+                </p>
+
+            </div>
+
+
+            <div class="metric-card rejected">
+
+                <h3
+                    id="rejectedListings"
+                    class="metric-value">
+
+                    0
+
+                </h3>
+
+                <p class="metric-label">
+                    Rejected
+                </p>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =====================================================
+             TOOLBAR
+        ====================================================== -->
+
+        <section class="filters-bar">
+
+            <!-- Action Buttons -->
+
+            <div class="toolbar-actions">
+
+                <button
+                    id="editBtn"
+                    class="secondary-btn"
+                    type="button"
+                    disabled>
+
+                    Edit
+
+                </button>
+
+                <button
+                    id="deleteBtn"
+                    class="secondary-btn"
+                    type="button"
+                    disabled>
+
+                    Delete
+
+                </button>
+
+                <button
+                    id="viewBtn"
+                    class="secondary-btn"
+                    type="button"
+                    disabled>
+
+                    View
+
+                </button>
+
+            </div>
+
+
+
+            <!-- Filters -->
+
+            <div class="filters">
+
+                <select id="statusFilter">
+
+                    <option value="all">
+                        All Listings
+                    </option>
+
+                    <option value="draft">
+                        Draft
+                    </option>
+
+                    <option value="pending">
+                        Pending Review
+                    </option>
+
+                    <option value="approved">
+                        Published
+                    </option>
+
+                    <option value="rejected">
+                        Rejected
+                    </option>
+
+                </select>
+
+
+                <div class="search-wrapper">
+
+                    <input
+                        type="search"
+                        id="searchListings"
+                        placeholder="Search listings...">
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =====================================================
+             LISTINGS TABLE
+        ====================================================== -->
+
+        <section class="listings-section">
+
+            <div class="table-wrapper">
+
+                <table class="listing-table">
+
+                    <thead>
+
+                        <tr>
+
+                            <th style="width:60px;">
+                                Select
+                            </th>
+
+                            <th>
+                                Property
+                            </th>
+
+                            <th>
+                                Property Type
+                            </th>
+
+                            <th>
+                                Location
+                            </th>
+
+                            <th>
+                                Price
+                            </th>
+
+                            <th>
+                                Status
+                            </th>
+
+                            <th>
+                                Submitted
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="listingContainer">
+
+                        <!--
+                        seller-dashboard.js will dynamically render:
+
+                        <tr>
+
+                            <td>
+                                <input type="checkbox">
+                            </td>
+
+                            <td>
+                                <img>
+                                Property Name
+                            </td>
+
+                            <td>Apartment</td>
+
+                            <td>Johannesburg</td>
+
+                            <td>R 4 500</td>
+
+                            <td>
+                                <span class="status approved">
+                                    Published
+                                </span>
+                            </td>
+
+                            <td>
+                                15 Jul 2026
+                            </td>
+
+                        </tr>
+                        -->
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+<!-- =====================================================
+     PART 2 STARTS HERE
+     (Modal Overlay + Listing Form)
+===================================================== -->
+<!-- =====================================================
+     CREATE / EDIT LISTING MODAL
+===================================================== -->
+
+<div
+    id="listingModal"
+    class="modal-overlay">
+
+    <div class="modal">
+
+        <!-- ================= Header ================= -->
+
+        <div class="modal-header">
+
+            <h2 id="modalTitle">
+                Create Property Listing
+            </h2>
+
+            <button
+                type="button"
+                id="closeModal"
+                class="modal-close"
+                aria-label="Close">
+
+                &times;
+
+            </button>
+
+        </div>
+
+
+        <!-- ================= Body ================= -->
+
+        <div class="modal-body">
+
+            <form id="listingForm">
+
+                <!-- =====================================================
+                     BASIC INFORMATION
+                ====================================================== -->
+
+                <section class="form-section">
+
+                    <h3>Basic Information</h3>
+
+                    <div class="form-grid">
+
+                        <div class="form-group full-width">
+
+                            <label for="title">
+                                Property Title
+                                <span class="required">*</span>
+                            </label>
+
+                            <input
+                                id="title"
+                                name="title"
+                                type="text"
+                                maxlength="120"
+                                placeholder="Enter listing title"
+                                required>
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="propertyType">
+                                Property Type
+                                <span class="required">*</span>
+                            </label>
+
+                            <select
+                                id="propertyType"
+                                name="propertyType"
+                                required>
+
+                                <option value="">
+                                    Select Property Type
+                                </option>
+
+                                <option value="student-accommodation">
+                                    Student Accommodation
+                                </option>
+
+                                <option value="apartment">
+                                    Apartment
+                                </option>
+
+                                <option value="house">
+                                    House
+                                </option>
+
+                                <option value="office">
+                                    Office
+                                </option>
+
+                                <option value="commercial">
+                                    Commercial Space
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="price">
+                                Monthly Price (ZAR)
+                                <span class="required">*</span>
+                            </label>
+
+                            <input
+                                id="price"
+                                name="price"
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                placeholder="0.00"
+                                required>
+
+                        </div>
+
+
+                        <div class="form-group full-width">
+
+                            <label for="description">
+
+                                Description
+
+                            </label>
+
+                            <textarea
+                                id="description"
+                                name="description"
+                                rows="5"
+                                maxlength="3000"
+                                placeholder="Describe the property, nearby amenities, transport, security and additional information."></textarea>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+
+
+                <!-- =====================================================
+                     PROPERTY FEATURES
+                ====================================================== -->
+
+                <section class="form-section">
+
+                    <h3>Property Features</h3>
+
+                    <div class="form-grid">
+
+                        <div class="form-group">
+
+                            <label for="bedrooms">
+                                Bedrooms
+                            </label>
+
+                            <input
+                                id="bedrooms"
+                                name="bedrooms"
+                                type="number"
+                                min="0"
+                                placeholder="0">
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label for="bathrooms">
+                                Bathrooms
+                            </label>
+
+                            <input
+                                id="bathrooms"
+                                name="bathrooms"
+                                type="number"
+                                min="0"
+                                step="0.5"
+                                placeholder="0">
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+
+
+                <!-- =====================================================
+                     LOCATION
+                ====================================================== -->
+
+                <section class="form-section">
+
+                    <h3>Location</h3>
+
+                    <div class="form-grid">
+
+                        <div class="form-group full-width">
+
+                            <label for="street">
+                                Street Address
+                            </label>
+
+                            <input
+                                id="street"
+                                name="street"
+                                type="text"
+                                placeholder="Street Address">
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="suburb">
+                                Suburb
+                            </label>
+
+                            <input
+                                id="suburb"
+                                name="suburb"
+                                type="text"
+                                placeholder="Suburb">
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="city">
+                                City
+                            </label>
+
+                            <input
+                                id="city"
+                                name="city"
+                                type="text"
+                                placeholder="City">
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="province">
+                                Province
+                            </label>
+
+                            <input
+                                id="province"
+                                name="province"
+                                type="text"
+                                placeholder="Province">
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+
+
+                <!-- =====================================================
+                     PROPERTY IMAGES
+                ====================================================== -->
+
+                <section class="form-section">
+
+                    <h3>Property Images</h3>
+
+                    <div
+                        class="upload-box"
+                        id="imageUploadBox">
+
+                        <span class="upload-icon">
+                            📷
+                        </span>
+
+                        <p>
+                            Drag & Drop property images here
+                        </p>
+
+                        <span class="hint">
+                            JPG, PNG or WEBP (Maximum 10 Images)
+                        </span>
+
+                        <input
+                            id="propertyImages"
+                            name="propertyImages"
+                            type="file"
+                            accept="image/*"
+                            multiple>
+
+                    </div>
+
+                    <div
+                        id="imagePreview"
+                        class="preview-grid">
+
+                        <!-- JS Generates Image Preview -->
+
+                    </div>
+
+                </section>
+
+
+
+                <!-- =====================================================
+                     PROPERTY VIDEO
+                ====================================================== -->
+
+                <section class="form-section">
+
+                    <h3>Property Video (Optional)</h3>
+
+                    <div
+                        class="upload-box"
+                        id="videoUploadBox">
+
+                        <span class="upload-icon">
+                            🎥
+                        </span>
+
+                        <p>
+                            Upload a walkthrough video
+                        </p>
+
+                        <span class="hint">
+                            MP4 • Maximum 100MB
+                        </span>
+
+                        <input
+                            id="propertyVideo"
+                            name="propertyVideo"
+                            type="file"
+                            accept="video/*">
+
+                    </div>
+
+                    <div
+                        id="videoPreview"
+                        class="video-preview">
+
+                        <!-- JS Generates Video Preview -->
+
+                    </div>
+
+                </section>
+
+
+
+                <!-- =====================================================
+                     LOADING STATE
+                ====================================================== -->
+
+                <div
+                    id="formLoading"
+                    class="loading-state"
+                    hidden>
+
+                    Uploading listing...
+
+                </div>
+
+            </form>
+
+        </div>
+
+
+
+        <!-- ================= Footer ================= -->
+
+        <div class="modal-footer">
+
+            <button
+                type="button"
+                id="cancelBtn"
+                class="secondary-btn">
+
+                Cancel
+
+            </button>
+
+            <button
+                type="button"
+                id="saveDraftBtn"
+                class="secondary-btn">
+
+                Save Draft
+
+            </button>
+
+            <button
+                type="submit"
+                form="listingForm"
+                id="submitListingBtn"
+                class="primary-btn">
+
+                Submit for Approval
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+
+</html>

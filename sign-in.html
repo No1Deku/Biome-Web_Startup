@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Sign In | Biome</title>
+
+    <link
+        rel="stylesheet"
+        href="sign-in.css"
+    >
+
+    <!-- Supabase -->
+
+    <script
+        defer
+        src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+    ></script>
+
+    <!-- Shared Authentication -->
+
+    <script
+        defer
+        src="auth.js"
+    ></script>
+
+    <!-- Login Logic -->
+
+    <script
+        defer
+        src="sign-in.js"
+    ></script>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="login-card">
+
+        <div class="logo">
+
+            <h1>Biome</h1>
+
+            <p>
+                Discover, List and Manage Properties
+            </p>
+
+        </div>
+
+        <form id="signin-form">
+
+            <h2>
+
+                Welcome Back
+
+            </h2>
+
+            <p class="subtitle">
+
+                Sign in to continue.
+
+            </p>
+
+            <!-- EMAIL -->
+
+            <label>
+
+                Email Address
+
+            </label>
+
+            <input
+                type="email"
+                id="signin-email"
+                placeholder="Enter your email"
+                autocomplete="email"
+                required
+            >
+
+            <!-- PASSWORD -->
+
+            <label>
+
+                Password
+
+            </label>
+
+            <input
+                type="password"
+                id="signin-password"
+                placeholder="Enter your password"
+                autocomplete="current-password"
+                required
+            >
+
+            <div class="form-options">
+
+                <label class="remember">
+
+                    <input
+                        type="checkbox"
+                        id="remember-me"
+                    >
+
+                    Remember Me
+
+                </label>
+
+                <a
+                    href="#"
+                    id="forgot-password"
+                >
+
+                    Forgot Password?
+
+                </a>
+
+            </div>
+
+            <div
+                id="status-message"
+                class="status"
+            ></div>
+
+        <button
+            type="submit"
+            id="signin-button">
+
+            Sign In
+
+        </button>
+
+        </form>
+
+        <div class="divider">
+
+            <span>
+
+                OR
+
+            </span>
+
+        </div>
+
+        <div class="signup-link">
+
+            Don't have an account?
+
+            <a
+                href="sign-up.html"
+            >
+
+                Create one
+
+            </a>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+
+</html>
