@@ -11,8 +11,6 @@
 
 /**
  * Format currency in ZAR
- * @param {number} price - The price to format
- * @returns {string} Formatted price string
  */
 function formatCurrency(price) {
     if (!price || price === 0) return 'Price on Request';
@@ -26,8 +24,6 @@ function formatCurrency(price) {
 
 /**
  * Format date for display
- * @param {string} dateString - ISO date string
- * @returns {string} Formatted date
  */
 function formatDate(dateString) {
     if (!dateString) return '';
@@ -41,8 +37,6 @@ function formatDate(dateString) {
 
 /**
  * Format address for display
- * @param {Object} address - Address object with fields
- * @returns {string} Formatted address
  */
 function formatAddress(address) {
     if (!address) return '';
@@ -62,8 +56,6 @@ function formatAddress(address) {
 /**
  * Get public URL from storage path
  * Uses the shared client from window.biomeSupabase
- * @param {string} storagePath - Path in storage bucket
- * @returns {string|null} Public URL or null
  */
 function getPublicImageUrl(storagePath) {
     if (!storagePath) return null;
@@ -87,8 +79,6 @@ function getPublicImageUrl(storagePath) {
 
 /**
  * Get safe image URL with fallback to placeholder
- * @param {string} storagePath - Path in storage bucket
- * @returns {string} URL or placeholder
  */
 function getSafeImageUrl(storagePath) {
     const url = getPublicImageUrl(storagePath);
@@ -109,8 +99,6 @@ function getPlaceholderImage() {
 
 /**
  * Show toast notification
- * @param {string} message - Message to display
- * @param {string} type - 'success', 'error', 'warning', 'info'
  */
 function showToast(message, type = 'info') {
     const container = document.getElementById('toastContainer');
@@ -134,56 +122,18 @@ function showToast(message, type = 'info') {
 }
 
 /**
- * Show loading indicator
- * @param {string} elementId - ID of loading element
+ * Debounce function for search/filter inputs
  */
-function showLoading(elementId) {
-    const element = document.getElementById(elementId);
-    if (element) element.style.display = 'block';
-}
-
-/**
- * Hide loading indicator
- * @param {string} elementId - ID of loading element
- */
-function hideLoading(elementId) {
-    const element = document.getElementById(elementId);
-    if (element) element.style.display = 'none';
-}
-
-/**
- * Show error state
- * @param {string} elementId - ID of error element
- * @param {string} title - Error title
- * @param {string} message - Error message
- */
-function showError(elementId, title, message) {
-    const element = document.getElementById(elementId);
-    if (!element) return;
-
-    element.style.display = 'block';
-    const titleEl = element.querySelector('.error-title');
-    const msgEl = element.querySelector('.error-message');
-    if (titleEl) titleEl.textContent = title || 'Error';
-    if (msgEl) msgEl.textContent = message || 'Something went wrong.';
-}
-
-/**
- * Hide error state
- * @param {string} elementId - ID of error element
- */
-function hideError(elementId) {
-    const element = document.getElementById(elementId);
-    if (element) element.style.display = 'none';
-}
-
-/**
- * Show content, hide loading and error
- * @param {string} contentId - ID of content element
- */
-function showContent(contentId) {
-    const content = document.getElementById(contentId);
-    if (content) content.style.display = 'block';
+function debounce(func, wait = 300) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
 }
 
 // =====================================================
@@ -192,8 +142,6 @@ function showContent(contentId) {
 
 /**
  * Validate UUID format
- * @param {string} id - UUID to validate
- * @returns {boolean} True if valid UUID
  */
 function isValidUUID(id) {
     if (!id || typeof id !== 'string') return false;
@@ -202,13 +150,24 @@ function isValidUUID(id) {
 }
 
 /**
- * Validate URL parameter exists
- * @param {string} param - URL parameter name
- * @returns {string|null} Parameter value or null
+ * Get URL parameter
  */
 function getUrlParam(param) {
     const params = new URLSearchParams(window.location.search);
     return params.get(param);
+}
+
+/**
+ * Redirect with optional delay
+ */
+function redirectTo(url, delay = 0) {
+    if (delay > 0) {
+        setTimeout(() => {
+            window.location.href = url;
+        }, delay);
+    } else {
+        window.location.href = url;
+    }
 }
 
 // =====================================================
@@ -217,12 +176,11 @@ function getUrlParam(param) {
 
 /**
  * Validate that the shared Supabase client is available
- * @returns {boolean} True if client exists
  */
 function validateSharedClient() {
     const client = window.biomeSupabase;
     if (!client) {
-        console.error('❌ Shared Supabase client not found. Check that supabase.js loaded correctly.');
+        console.error('❌ Shared Supabase client not found.');
         return false;
     }
     console.log('✅ Shared Supabase client available.');
@@ -231,7 +189,6 @@ function validateSharedClient() {
 
 /**
  * Get the shared Supabase client
- * @returns {Object} Supabase client
  * @throws {Error} If client is not available
  */
 function getSharedClient() {
@@ -258,15 +215,12 @@ window.getPlaceholderImage = getPlaceholderImage;
 
 // UI
 window.showToast = showToast;
-window.showLoading = showLoading;
-window.hideLoading = hideLoading;
-window.showError = showError;
-window.hideError = hideError;
-window.showContent = showContent;
+window.debounce = debounce;
 
 // Validation
 window.isValidUUID = isValidUUID;
 window.getUrlParam = getUrlParam;
+window.redirectTo = redirectTo;
 
 // Client
 window.validateSharedClient = validateSharedClient;
