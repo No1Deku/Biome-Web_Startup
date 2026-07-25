@@ -31,9 +31,6 @@ const biomeSupabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 // Expose the shared client globally
 window.biomeSupabase = biomeSupabase;
 
-// Also expose for backward compatibility (but should be deprecated)
-window.supabaseClient = biomeSupabase;
-
 console.log('✅ Shared Supabase client initialized.');
 
 // Prevent any other file from creating a client
