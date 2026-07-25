@@ -29,12 +29,9 @@ const AuthDOM = {
 };
 
 // =====================================================
-// AUTH SERVICE
+// CLIENT ACCESS
 // =====================================================
 
-/**
- * Get the shared Supabase client
- */
 function getClient() {
     const client = window.biomeSupabase;
     if (!client) {
@@ -44,9 +41,10 @@ function getClient() {
     return client;
 }
 
-/**
- * Get current session
- */
+// =====================================================
+// AUTH SERVICE
+// =====================================================
+
 async function getSession() {
     const client = getClient();
     if (!client) return null;
@@ -64,9 +62,6 @@ async function getSession() {
     }
 }
 
-/**
- * Get current user
- */
 async function getCurrentUser() {
     const client = getClient();
     if (!client) return null;
@@ -84,9 +79,6 @@ async function getCurrentUser() {
     }
 }
 
-/**
- * Get user profile from profiles table
- */
 async function getProfile(userId) {
     const client = getClient();
     if (!client || !userId) return null;
@@ -109,9 +101,6 @@ async function getProfile(userId) {
     }
 }
 
-/**
- * Sign in with email and password
- */
 async function signIn(email, password) {
     const client = getClient();
     if (!client) {
@@ -132,9 +121,6 @@ async function signIn(email, password) {
     }
 }
 
-/**
- * Sign up with email and password
- */
 async function signUp(email, password, metadata = {}) {
     const client = getClient();
     if (!client) {
@@ -158,9 +144,6 @@ async function signUp(email, password, metadata = {}) {
     }
 }
 
-/**
- * Sign out
- */
 async function signOut() {
     const client = getClient();
     if (!client) {
@@ -177,9 +160,6 @@ async function signOut() {
     }
 }
 
-/**
- * Update user profile
- */
 async function updateProfile(profileData) {
     const client = getClient();
     if (!client) {
@@ -207,9 +187,10 @@ async function updateProfile(profileData) {
     }
 }
 
-/**
- * Handle auth state change - SINGLE LISTENER
- */
+// =====================================================
+// AUTH STATE HANDLER - SINGLE LISTENER
+// =====================================================
+
 function handleAuthStateChange() {
     const client = getClient();
     if (!client) {
@@ -220,6 +201,7 @@ function handleAuthStateChange() {
     // Only ONE listener - remove any existing ones first
     if (window._authListener) {
         window._authListener.unsubscribe();
+        console.log('🔐 Removed existing auth listener');
     }
 
     window._authListener = client.auth.onAuthStateChange(async (event, session) => {
@@ -255,9 +237,48 @@ function handleAuthStateChange() {
     });
 }
 
-/**
- * Initialize auth state
- */
+// =====================================================
+// UI UPDATES
+// =====================================================
+
+function updateUI() {
+    const { isAuthenticated, user, profile, role } = AuthState;
+
+    const navButtons = AuthDOM.navButtons;
+    if (navButtons) {
+        if (isAuthenticated && user) {
+            navButtons.innerHTML = `
+                <span class="user-greeting">Hello, ${profile?.full_name || user.email?.split('@')[0] || 'User'}</span>
+                <a href="dashboard.html" class="btn btn-primary">Dashboard</a>
+                <button onclick="window.handleSignOut()" class="btn btn-outline">Sign Out</button>
+            `;
+        } else {
+            navButtons.innerHTML = `
+                <a href="sign-in.html" class="btn btn-outline">Sign In</a>
+                <a href="sign-up.html" class="btn btn-primary">Sign Up</a>
+            `;
+        }
+    }
+
+    // Update protected links
+    document.querySelectorAll('.protected-link').forEach(link => {
+        link.style.display = isAuthenticated ? 'inline' : 'none';
+    });
+
+    // Update role-specific links
+    document.querySelectorAll('.admin-only').forEach(link => {
+        link.style.display = role === 'admin' ? 'inline' : 'none';
+    });
+
+    document.querySelectorAll('.seller-only').forEach(link => {
+        link.style.display = (role === 'seller' || role === 'admin') ? 'inline' : 'none';
+    });
+}
+
+// =====================================================
+// INITIALIZATION
+// =====================================================
+
 async function initAuth() {
     console.log('🔐 Auth service initializing...');
 
@@ -287,60 +308,6 @@ async function initAuth() {
     if (!window._authListener) {
         handleAuthStateChange();
     }
-}
-
-// =====================================================
-// UI UPDATES
-// =====================================================
-
-/**
- * Update UI based on auth state
- */
-function updateUI() {
-    const { isAuthenticated, user, profile, role } = AuthState;
-
-    // Update navigation buttons
-    const navButtons = AuthDOM.navButtons;
-    if (navButtons) {
-        if (isAuthenticated && user) {
-            navButtons.innerHTML = `
-                <span class="user-greeting">Hello, ${profile?.full_name || user.email?.split('@')[0] || 'User'}</span>
-                <a href="dashboard.html" class="btn btn-primary">Dashboard</a>
-                <button onclick="window.handleSignOut()" class="btn btn-outline">Sign Out</button>
-            `;
-        } else {
-            navButtons.innerHTML = `
-                <a href="sign-in.html" class="btn btn-outline">Sign In</a>
-                <a href="sign-up.html" class="btn btn-primary">Sign Up</a>
-            `;
-        }
-    }
-
-    // Update protected links
-    document.querySelectorAll('.protected-link').forEach(link => {
-        if (isAuthenticated) {
-            link.style.display = 'inline';
-        } else {
-            link.style.display = 'none';
-        }
-    });
-
-    // Update role-specific links
-    document.querySelectorAll('.admin-only').forEach(link => {
-        if (role === 'admin') {
-            link.style.display = 'inline';
-        } else {
-            link.style.display = 'none';
-        }
-    });
-
-    document.querySelectorAll('.seller-only').forEach(link => {
-        if (role === 'seller' || role === 'admin') {
-            link.style.display = 'inline';
-        } else {
-            link.style.display = 'none';
-        }
-    });
 }
 
 // =====================================================
