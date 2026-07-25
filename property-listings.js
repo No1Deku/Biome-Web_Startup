@@ -1,160 +1,64 @@
 /* =====================================================
    PROPERTY DETAILS - Refactored Module
    =====================================================
-   Architectural pattern follows property-listings.js
+   Architecture follows property-listings.js pattern
+   Uses shared client from supabase.js
    ===================================================== */
 
 // =====================================================
 // STATE
 // =====================================================
 
-const PageState = {
+const pageState = {
     listing: null,
     gallery: [],
     seller: null,
     similarListings: [],
     loading: true,
-    error: null
+    error: null,
+    listingId: null
 };
 
 // =====================================================
-// DOM CACHE
+// DOM CACHE - Match HTML IDs exactly
 // =====================================================
+
+const $ = (id) => document.getElementById(id);
 
 const DOM = {
-    loading: document.getElementById('detailsLoading'),
-    error: document.getElementById('detailsError'),
-    errorTitle: document.getElementById('errorTitle'),
-    errorMessage: document.getElementById('errorMessage'),
-    content: document.getElementById('propertyContent'),
-    breadcrumbName: document.getElementById('breadcrumbPropertyName'),
+    loading: $('detailsLoading'),
+    error: $('detailsError'),
+    errorTitle: $('errorTitle'),
+    errorMessage: $('errorMessage'),
+    content: $('propertyContent'),
+    breadcrumbName: $('breadcrumbPropertyName'),
 
-    gallery: document.getElementById('detailsGallery'),
-    header: document.getElementById('detailsHeader'),
-    quickFacts: document.getElementById('detailsQuickFacts'),
-    description: document.getElementById('detailsDescription'),
-    amenities: document.getElementById('detailsAmenities'),
-    seller: document.getElementById('detailsSeller'),
-    location: document.getElementById('detailsLocation'),
-    similar: document.getElementById('detailsSimilar')
+    gallery: $('detailsGallery'),
+    header: $('detailsHeader'),
+    quickFacts: $('detailsQuickFacts'),
+    description: $('detailsDescription'),
+    amenities: $('detailsAmenities'),
+    seller: $('detailsSeller'),
+    location: $('detailsLocation'),
+    similar: $('detailsSimilar')
 };
 
 // =====================================================
-// UTILITIES (Reused from property-listings.js)
+// VALIDATE SHARED CLIENT EXISTS
 // =====================================================
 
-/**
- * Format price in ZAR currency
- * Reuses the same implementation as property-listings.js
- */
-function formatPrice(price) {
-    if (!price || price === 0) return 'Price on Request';
-    return new Intl.NumberFormat('en-ZA', {
-        style: 'currency',
-        currency: 'ZAR',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-    }).format(price);
-}
-
-/**
- * Format date for display
- * Reuses the same implementation as property-listings.js
- */
-function formatDate(dateString) {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-ZA', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
-}
-
-/**
- * Get public URL from storage path
- * Reuses the same bucket name as property-listings.js
- */
-function getPublicImage(storagePath) {
-    if (!storagePath) return null;
-
-    try {
-        const { data } = supabase.storage
-            .from('listing-media')  // Same bucket as property-listings.js
-            .getPublicUrl(storagePath);
-        return data.publicUrl;
-    } catch (error) {
-        console.warn('Failed to get public URL:', error);
-        return null;
+function validateSharedClient() {
+    // Check for the shared client from supabase.js
+    // The shared client could be window.supabase, window.biomeSupabase, or window.supabaseClient
+    const client = window.supabase || window.biomeSupabase || window.supabaseClient;
+    
+    if (!client) {
+        console.error('❌ Shared Supabase client not found. Check script loading order.');
+        return false;
     }
-}
-
-/**
- * Get safe image URL with fallback
- */
-function getSafeImageUrl(storagePath) {
-    if (!storagePath) return getPlaceholderImage();
-
-    const url = getPublicImage(storagePath);
-    return url || getPlaceholderImage();
-}
-
-/**
- * Placeholder image for missing images
- */
-function getPlaceholderImage() {
-    return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600"%3E%3Crect width="800" height="600" fill="%23f3f4f6"/%3E%3Ctext x="400" y="300" font-family="Arial" font-size="24" fill="%239ca3af" text-anchor="middle"%3ENo Image Available%3C/text%3E%3C/svg%3E';
-}
-
-// =====================================================
-// UI HELPERS
-// =====================================================
-
-function showLoading() {
-    DOM.loading.style.display = 'block';
-    DOM.error.style.display = 'none';
-    DOM.content.style.display = 'none';
-}
-
-function hideLoading() {
-    DOM.loading.style.display = 'none';
-}
-
-function showError(title, message) {
-    DOM.loading.style.display = 'none';
-    DOM.content.style.display = 'none';
-    DOM.error.style.display = 'block';
-    DOM.errorTitle.textContent = title || 'Unable to Load Property';
-    DOM.errorMessage.textContent = message || 'Something went wrong. Please try again.';
-}
-
-function hideError() {
-    DOM.error.style.display = 'none';
-}
-
-function showContent() {
-    DOM.loading.style.display = 'none';
-    DOM.error.style.display = 'none';
-    DOM.content.style.display = 'block';
-}
-
-/**
- * Show toast notification (reuses existing toast system)
- */
-function showToast(message, type = 'info') {
-    const container = document.getElementById('toastContainer');
-    if (!container) return;
-
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    toast.textContent = message;
-    container.appendChild(toast);
-
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transform = 'translateX(30px)';
-        setTimeout(() => toast.remove(), 300);
-    }, 4000);
+    
+    console.log('✅ Shared Supabase client found.');
+    return true;
 }
 
 // =====================================================
@@ -170,22 +74,62 @@ function validateListingId(id) {
     if (!id || id.length < 8) {
         return false;
     }
-    // UUID validation
+    // Basic UUID validation
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     return uuidRegex.test(id);
 }
 
 // =====================================================
-// DATABASE LOADERS
+// UI HELPERS
+// =====================================================
+
+function showLoading() {
+    if (DOM.loading) DOM.loading.style.display = 'block';
+    if (DOM.error) DOM.error.style.display = 'none';
+    if (DOM.content) DOM.content.style.display = 'none';
+}
+
+function hideLoading() {
+    if (DOM.loading) DOM.loading.style.display = 'none';
+}
+
+function showError(title, message) {
+    if (DOM.loading) DOM.loading.style.display = 'none';
+    if (DOM.content) DOM.content.style.display = 'none';
+    if (DOM.error) {
+        DOM.error.style.display = 'block';
+        if (DOM.errorTitle) DOM.errorTitle.textContent = title || 'Unable to Load Property';
+        if (DOM.errorMessage) DOM.errorMessage.textContent = message || 'Something went wrong.';
+    }
+}
+
+function hideError() {
+    if (DOM.error) DOM.error.style.display = 'none';
+}
+
+function showContent() {
+    if (DOM.loading) DOM.loading.style.display = 'none';
+    if (DOM.error) DOM.error.style.display = 'none';
+    if (DOM.content) DOM.content.style.display = 'block';
+}
+
+// =====================================================
+// DATABASE LOADERS - Using listing_complete_view
 // =====================================================
 
 /**
  * Load listing from listing_complete_view
  * Enforces status = 'approved'
+ * Uses shared client
  */
 async function loadListing(listingId) {
+    const client = window.supabase || window.biomeSupabase || window.supabaseClient;
+    if (!client) {
+        throw new Error('Supabase client not available');
+    }
+
     try {
-        const { data, error } = await supabase
+        const { data, error } = await client
             .from('listing_complete_view')
             .select('*')
             .eq('listing_id', listingId)
@@ -210,10 +154,17 @@ async function loadListing(listingId) {
 
 /**
  * Load gallery from listing_media
+ * Uses the shared client
  */
 async function loadGallery(listingId) {
+    const client = window.supabase || window.biomeSupabase || window.supabaseClient;
+    if (!client) {
+        console.warn('Supabase client not available for gallery');
+        return [];
+    }
+
     try {
-        const { data, error } = await supabase
+        const { data, error } = await client
             .from('listing_media')
             .select('*')
             .eq('listing_id', listingId)
@@ -233,15 +184,19 @@ async function loadGallery(listingId) {
 
 /**
  * Load seller from profiles
+ * Uses the existing foreign key relationship
  */
 async function loadSeller(sellerId) {
-    try {
-        if (!sellerId) return null;
+    const client = window.supabase || window.biomeSupabase || window.supabaseClient;
+    if (!client || !sellerId) {
+        return null;
+    }
 
-        const { data, error } = await supabase
+    try {
+        const { data, error } = await client
             .from('profiles')
-            .select('user_id, full_name, avatar_url, phone, email, agency, is_verified')
-            .eq('user_id', sellerId)
+            .select('*')
+            .eq('id', sellerId)
             .single();
 
         if (error) {
@@ -260,10 +215,13 @@ async function loadSeller(sellerId) {
  * Load similar listings from listing_complete_view
  */
 async function loadSimilarListings(listing) {
-    try {
-        if (!listing) return [];
+    const client = window.supabase || window.biomeSupabase || window.supabaseClient;
+    if (!client || !listing) {
+        return [];
+    }
 
-        const { data, error } = await supabase
+    try {
+        const { data, error } = await client
             .from('listing_complete_view')
             .select('*')
             .eq('status', 'approved')
@@ -285,22 +243,90 @@ async function loadSimilarListings(listing) {
 }
 
 // =====================================================
-// RENDERERS
+// RENDERERS - Using shared helpers from utils.js
 // =====================================================
 
 /**
  * Render breadcrumb
  */
 function renderBreadcrumb(listing) {
-    if (!listing) return;
+    if (!listing || !DOM.breadcrumbName) return;
     DOM.breadcrumbName.textContent = listing.title || 'Property';
     document.title = `Biome | ${listing.title || 'Property Details'}`;
 }
 
 /**
+ * Get safe image URL using shared helper
+ */
+function getSafeImageUrl(storagePath) {
+    // Use shared helper if available
+    if (window.getPublicImageUrl) {
+        const url = window.getPublicImageUrl(storagePath);
+        return url || getPlaceholderImage();
+    }
+    
+    // Fallback implementation
+    if (!storagePath) return getPlaceholderImage();
+    
+    const client = window.supabase || window.biomeSupabase || window.supabaseClient;
+    if (!client) return getPlaceholderImage();
+    
+    try {
+        const { data } = client.storage
+            .from('listing-media')
+            .getPublicUrl(storagePath);
+        return data.publicUrl || getPlaceholderImage();
+    } catch (error) {
+        console.warn('Failed to get public URL:', error);
+        return getPlaceholderImage();
+    }
+}
+
+/**
+ * Placeholder image
+ */
+function getPlaceholderImage() {
+    return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600"%3E%3Crect width="800" height="600" fill="%23f3f4f6"/%3E%3Ctext x="400" y="300" font-family="Arial" font-size="24" fill="%239ca3af" text-anchor="middle"%3ENo Image Available%3C/text%3E%3C/svg%3E';
+}
+
+/**
+ * Format price using shared helper if available
+ */
+function formatPrice(price) {
+    if (window.formatCurrency) {
+        return window.formatCurrency(price);
+    }
+    
+    if (!price || price === 0) return 'Price on Request';
+    return new Intl.NumberFormat('en-ZA', {
+        style: 'currency',
+        currency: 'ZAR',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    }).format(price);
+}
+
+/**
+ * Format date using shared helper if available
+ */
+function formatDate(dateString) {
+    if (window.formatDate) {
+        return window.formatDate(dateString);
+    }
+    
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-ZA', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+}
+
+/**
  * Render gallery
  */
-function renderGallery(gallery, listing) {
+function renderGallery(gallery) {
     const container = DOM.gallery;
     if (!container) return;
 
@@ -351,7 +377,7 @@ function renderGallery(gallery, listing) {
 }
 
 /**
- * Register gallery thumbnail click events
+ * Register gallery events
  */
 function registerGalleryEvents(container) {
     const thumbnails = container.querySelectorAll('.gallery-thumbnail');
@@ -388,13 +414,19 @@ function registerGalleryEvents(container) {
 
 /**
  * Render property header
+ * Uses actual schema fields
  */
 function renderHeader(listing) {
     const container = DOM.header;
     if (!container || !listing) return;
 
-    const availability = listing.availability_status === 'available' ? 'Available' : 'Unavailable';
-    const availabilityClass = listing.availability_status === 'available' ? 'status-available' : 'status-unavailable';
+    // Build location string from available fields
+    const locationParts = [];
+    if (listing.address) locationParts.push(listing.address);
+    if (listing.suburb) locationParts.push(listing.suburb);
+    if (listing.city) locationParts.push(listing.city);
+    if (listing.province) locationParts.push(listing.province);
+    const locationDisplay = locationParts.join(', ');
 
     container.innerHTML = `
         <div class="property-header">
@@ -402,15 +434,16 @@ function renderHeader(listing) {
             <div class="property-price-row">
                 <span class="property-price">${formatPrice(listing.price)}</span>
                 <span class="property-type-badge-large">${listing.property_type || 'Property'}</span>
-                <span class="property-availability ${availabilityClass}">${availability}</span>
             </div>
-            <div class="property-location-row">
-                <i class="fa-solid fa-location-dot"></i>
-                <span>${listing.address || ''}${listing.address && listing.suburb ? ', ' : ''}${listing.suburb || ''}${(listing.address || listing.suburb) && listing.city ? ', ' : ''}${listing.city || ''}${listing.city && listing.province ? ', ' : ''}${listing.province || ''}</span>
-            </div>
+            ${locationDisplay ? `
+                <div class="property-location-row">
+                    <i class="fa-solid fa-location-dot"></i>
+                    <span>${locationDisplay}</span>
+                </div>
+            ` : ''}
             <div class="property-meta-row">
-                <span><i class="fa-regular fa-calendar"></i> Listed: ${formatDate(listing.created_at)}</span>
-                <span><i class="fa-regular fa-eye"></i> ${listing.views_count || 0} views</span>
+                ${listing.created_at ? `<span><i class="fa-regular fa-calendar"></i> Listed: ${formatDate(listing.created_at)}</span>` : ''}
+                ${listing.views_count ? `<span><i class="fa-regular fa-eye"></i> ${listing.views_count} views</span>` : ''}
             </div>
         </div>
     `;
@@ -466,7 +499,7 @@ function renderDescription(listing) {
 }
 
 /**
- * Render amenities
+ * Render amenities - handles both array and string formats
  */
 function renderAmenities(listing) {
     const container = DOM.amenities;
@@ -558,13 +591,12 @@ function renderLocation(listing) {
             ${listing.suburb ? `<p><i class="fa-solid fa-location-dot"></i> ${listing.suburb}</p>` : ''}
             ${listing.city ? `<p><i class="fa-solid fa-city"></i> ${listing.city}</p>` : ''}
             ${listing.province ? `<p><i class="fa-solid fa-map"></i> ${listing.province}</p>` : ''}
-            ${listing.postal_code ? `<p><i class="fa-solid fa-mailbox"></i> ${listing.postal_code}</p>` : ''}
         </div>
     `;
 }
 
 /**
- * Render similar listings - REUSES property card pattern from property-listings.js
+ * Render similar listings - REUSES property card pattern
  */
 function renderSimilarListings(listings) {
     const container = DOM.similar;
@@ -579,18 +611,18 @@ function renderSimilarListings(listings) {
     container.innerHTML = `
         <h2>Similar Listings</h2>
         <div class="similar-grid">
-            ${listings.map(listing => renderPropertyCard(listing)).join('')}
+            ${listings.map(listing => renderSimilarCard(listing)).join('')}
         </div>
     `;
 
-    // Register click events for similar listings
+    // Register click events
     registerSimilarCardEvents(container);
 }
 
 /**
- * Render a single property card - REUSED from property-listings.js pattern
+ * Render a similar listing card - reuses the property card pattern
  */
-function renderPropertyCard(listing) {
+function renderSimilarCard(listing) {
     const imageUrl = getSafeImageUrl(listing.cover_image);
     const price = formatPrice(listing.price);
     const location = listing.city || listing.suburb || 'Location';
@@ -640,20 +672,25 @@ function registerSimilarCardEvents(container) {
 }
 
 // =====================================================
-// INITIALIZATION
+// MAIN INITIALIZATION - FAIL FAST
 // =====================================================
 
-/**
- * Main initialization function
- * Follows the pattern from property-listings.js
- */
 async function init() {
     console.log('🚀 Property Details initializing...');
 
-    // Show loading state
+    // 1. Validate shared client exists
+    if (!validateSharedClient()) {
+        showError(
+            'Initialization Error',
+            'Unable to connect to Biome. Please refresh the page or try again later.'
+        );
+        return;
+    }
+
+    // 2. Show loading state
     showLoading();
 
-    // Get and validate listing ID
+    // 3. Get and validate listing ID
     const listingId = getListingId();
 
     if (!validateListingId(listingId)) {
@@ -664,43 +701,53 @@ async function init() {
         return;
     }
 
-    try {
-        // 1. Load listing (enforces approved status)
-        const listing = await loadListing(listingId);
-        PageState.listing = listing;
+    pageState.listingId = listingId;
 
-        // 2. Render breadcrumb and header (immediate)
+    try {
+        // 4. Load listing - THIS MUST SUCCEED
+        const listing = await loadListing(listingId);
+        pageState.listing = listing;
+
+        // 5. Render breadcrumb and header (immediate)
         renderBreadcrumb(listing);
         renderHeader(listing);
 
-        // 3. Load and render gallery (non-blocking)
-        const gallery = await loadGallery(listingId);
-        PageState.gallery = gallery;
-        renderGallery(gallery, listing);
-
-        // 4. Load and render seller (non-blocking)
-        if (listing.seller_id) {
-            const seller = await loadSeller(listing.seller_id);
-            PageState.seller = seller;
-            renderSeller(seller);
-        }
-
-        // 5. Render remaining property details
+        // 6. Render remaining property details
         renderQuickFacts(listing);
         renderDescription(listing);
         renderAmenities(listing);
         renderLocation(listing);
 
-        // 6. Show content
-        hideLoading();
+        // 7. Show content immediately
         showContent();
 
-        // 7. Load similar listings (async, non-blocking, after page render)
+        // 8. Load gallery (non-blocking)
+        loadGallery(listingId).then(gallery => {
+            pageState.gallery = gallery;
+            renderGallery(gallery);
+        }).catch(err => {
+            console.warn('Gallery load failed:', err);
+            renderGallery([]);
+        });
+
+        // 9. Load seller (non-blocking)
+        if (listing.owner_id || listing.profile_id) {
+            const sellerId = listing.owner_id || listing.profile_id;
+            loadSeller(sellerId).then(seller => {
+                pageState.seller = seller;
+                renderSeller(seller);
+            }).catch(err => {
+                console.warn('Seller load failed:', err);
+                renderSeller(null);
+            });
+        }
+
+        // 10. Load similar listings (non-blocking, after page render)
         loadSimilarListings(listing).then(similar => {
-            PageState.similarListings = similar;
+            pageState.similarListings = similar;
             renderSimilarListings(similar);
         }).catch(err => {
-            console.warn('Failed to load similar listings:', err);
+            console.warn('Similar listings load failed:', err);
             renderSimilarListings([]);
         });
 
@@ -716,7 +763,7 @@ async function init() {
 }
 
 // =====================================================
-// START
+// START - Only when DOM is ready
 // =====================================================
 
 document.addEventListener('DOMContentLoaded', init);
