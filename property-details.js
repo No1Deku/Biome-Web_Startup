@@ -497,4 +497,128 @@ function renderSimilarCard(listing) {
     const location = listing.city || listing.suburb || 'Location';
 
     return `
-        <div class="property-card similar-card" data-listing-id="${listing.listing
+        <div class="property-card similar-card" data-listing-id="${listing.listing_id}" role="button" tabindex="0">
+            <div class="property-image">
+                <img src="${imageUrl}" alt="${listing.title || 'Property'}" loading="lazy">
+                <span class="property-type-badge">${listing.property_type || 'Property'}</span>
+            </div>
+            <div class="property-body">
+                <h3>${listing.title || 'Untitled'}</h3>
+                <div class="location">
+                    <i class="fa-solid fa-location-dot"></i>
+                    <span>${location}</span>
+                </div>
+                <div class="price-row">
+                    <h4>${price}</h4>
+                    <span class="view-property-link">View Details →</span>
+                </div>
+                <div class="property-tags">
+                    <span><i class="fa-solid fa-bed"></i> ${listing.bedrooms || 0}</span>
+                    <span><i class="fa-solid fa-bath"></i> ${listing.bathrooms || 0}</span>
+                    <span><i class="fa-solid fa-car"></i> ${listing.parking || 0}</span>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function registerSimilarCardEvents() {
+    document.querySelectorAll('.similar-card').forEach(card => {
+        const listingId = card.dataset.listingId;
+        card.addEventListener('click', () => {
+            window.location.href = `property-details.html?id=${listingId}`;
+        });
+        card.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                window.location.href = `property-details.html?id=${listingId}`;
+            }
+        });
+    });
+}
+
+// =====================================================
+// MAIN INITIALIZATION
+// =====================================================
+
+async function init() {
+    console.log('🚀 Property Details initializing...');
+
+    // Validate shared client
+    if (!window.validateSharedClient()) {
+        showErrorState(
+            'Initialization Error',
+            'Unable to connect to Biome. Please refresh the page or try again later.'
+        );
+        return;
+    }
+
+    showLoadingState();
+
+    const listingId = getListingId();
+    if (!validateListingId(listingId)) {
+        showErrorState(
+            'Invalid Property',
+            'The property ID provided is invalid. Please check the URL and try again.'
+        );
+        return;
+    }
+
+    pageState.listingId = listingId;
+
+    try {
+        const listing = await loadListing(listingId);
+        pageState.listing = listing;
+
+        renderBreadcrumb(listing);
+        renderHeader(listing);
+        renderQuickFacts(listing);
+        renderDescription(listing);
+        renderAmenities(listing);
+        renderLocation(listing);
+
+        showContentState();
+
+        loadGallery(listingId).then(gallery => {
+            pageState.gallery = gallery;
+            renderGallery(gallery);
+        }).catch(err => {
+            console.warn('Gallery load failed:', err);
+            renderGallery([]);
+        });
+
+        if (listing.owner_id || listing.profile_id) {
+            const sellerId = listing.owner_id || listing.profile_id;
+            loadSeller(sellerId).then(seller => {
+                pageState.seller = seller;
+                renderSeller(seller);
+            }).catch(err => {
+                console.warn('Seller load failed:', err);
+                renderSeller(null);
+            });
+        }
+
+        loadSimilarListings(listing).then(similar => {
+            pageState.similarListings = similar;
+            renderSimilarListings(similar);
+        }).catch(err => {
+            console.warn('Similar listings load failed:', err);
+            renderSimilarListings([]);
+        });
+
+        console.log('✅ Property details loaded successfully');
+
+    } catch (error) {
+        console.error('❌ Failed to load property:', error);
+        showErrorState(
+            'Unable to Load Property',
+            error.message || 'Something went wrong. Please try again later.'
+        );
+    }
+}
+
+// =====================================================
+// START
+// =====================================================
+
+document.addEventListener('DOMContentLoaded', init);
