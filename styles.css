@@ -240,7 +240,7 @@ body {
 .hero {
     min-height: calc(100vh - 80px);
     background: linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)),
-                url("cover.jpg");
+                url("https://raw.githubusercontent.com/No1Deku/Biome-Web_Startup/e4f29ee2543284f9242fd902013f2e49921bdc20/cover.jpg");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
