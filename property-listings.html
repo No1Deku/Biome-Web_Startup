@@ -11,6 +11,9 @@
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+    <!-- ===== SUPABASE SDK - MUST LOAD FIRST ===== -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -191,9 +194,10 @@
     <!-- Toast Notification Container -->
     <div id="toastContainer" class="toast-container" aria-live="polite"></div>
 
-    <!-- Shared Supabase Client -->
+    <!-- ===== SHARED MODULES - LOAD IN ORDER ===== -->
     <script src="supabase.js"></script>
-    <!-- Property Details Module -->
+    <script src="auth.js"></script>
+    <script src="utils.js"></script>
     <script src="property-details.js"></script>
 </body>
 </html>
