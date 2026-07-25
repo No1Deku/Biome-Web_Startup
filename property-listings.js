@@ -1,634 +1,172 @@
 /* =====================================================
-   PROPERTY DETAILS - Refactored Module
+   BIOME - Property Listings Module
    =====================================================
-   Architecture follows property-listings.js pattern
-   Uses shared client from supabase.js
+   Uses shared client from window.biomeSupabase
+   Uses shared utilities from utils.js
    ===================================================== */
 
 // =====================================================
 // STATE
 // =====================================================
 
-const pageState = {
-    listing: null,
-    gallery: [],
-    seller: null,
-    similarListings: [],
-    loading: true,
-    error: null,
-    listingId: null
+const ListingsState = {
+    properties: [],
+    filteredProperties: [],
+    currentPage: 1,
+    itemsPerPage: 9,
+    totalItems: 0,
+    totalPages: 0,
+    loading: false,
+    propertyTypes: [],
+    filters: {
+        search: '',
+        province: '',
+        city: '',
+        propertyType: '',
+        minPrice: '',
+        maxPrice: '',
+        sortBy: 'created_at_desc'
+    }
 };
 
 // =====================================================
-// DOM CACHE - Match HTML IDs exactly
+// DOM CACHE
 // =====================================================
-
-const $ = (id) => document.getElementById(id);
 
 const DOM = {
-    loading: $('detailsLoading'),
-    error: $('detailsError'),
-    errorTitle: $('errorTitle'),
-    errorMessage: $('errorMessage'),
-    content: $('propertyContent'),
-    breadcrumbName: $('breadcrumbPropertyName'),
-
-    gallery: $('detailsGallery'),
-    header: $('detailsHeader'),
-    quickFacts: $('detailsQuickFacts'),
-    description: $('detailsDescription'),
-    amenities: $('detailsAmenities'),
-    seller: $('detailsSeller'),
-    location: $('detailsLocation'),
-    similar: $('detailsSimilar')
+    grid: document.getElementById('featuredGrid'),
+    loading: document.getElementById('featuredLoading'),
+    empty: document.getElementById('featuredEmpty'),
+    error: document.getElementById('featuredError'),
+    searchInput: document.getElementById('heroSearch'),
+    provinceSelect: document.getElementById('heroProvince'),
+    citySelect: document.getElementById('heroCity'),
+    propertyTypeSelect: document.getElementById('heroPropertyType'),
+    minPriceSelect: document.getElementById('heroMinPrice'),
+    maxPriceSelect: document.getElementById('heroMaxPrice'),
+    pagination: document.getElementById('pagination'),
+    totalCount: document.getElementById('totalCount'),
+    resultsCount: document.getElementById('resultsCount')
 };
 
 // =====================================================
-// VALIDATE SHARED CLIENT EXISTS
+// CLIENT ACCESS
 // =====================================================
 
-function validateSharedClient() {
-    // Check for the shared client from supabase.js
-    // The shared client could be window.supabase, window.biomeSupabase, or window.supabaseClient
-    const client = window.supabase || window.biomeSupabase || window.supabaseClient;
-    
+function getClient() {
+    const client = window.biomeSupabase;
     if (!client) {
-        console.error('❌ Shared Supabase client not found. Check script loading order.');
-        return false;
+        console.error('❌ Listings: Shared Supabase client not available');
+        return null;
     }
-    
-    console.log('✅ Shared Supabase client found.');
-    return true;
+    return client;
 }
 
 // =====================================================
-// URL HANDLING
+// DATA LOADERS
 // =====================================================
 
-function getListingId() {
-    const params = new URLSearchParams(window.location.search);
-    return params.get('id');
-}
-
-function validateListingId(id) {
-    if (!id || id.length < 8) {
-        return false;
-    }
-    // Basic UUID validation
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    return uuidRegex.test(id);
-}
-
-// =====================================================
-// UI HELPERS
-// =====================================================
-
-function showLoading() {
-    if (DOM.loading) DOM.loading.style.display = 'block';
-    if (DOM.error) DOM.error.style.display = 'none';
-    if (DOM.content) DOM.content.style.display = 'none';
-}
-
-function hideLoading() {
-    if (DOM.loading) DOM.loading.style.display = 'none';
-}
-
-function showError(title, message) {
-    if (DOM.loading) DOM.loading.style.display = 'none';
-    if (DOM.content) DOM.content.style.display = 'none';
-    if (DOM.error) {
-        DOM.error.style.display = 'block';
-        if (DOM.errorTitle) DOM.errorTitle.textContent = title || 'Unable to Load Property';
-        if (DOM.errorMessage) DOM.errorMessage.textContent = message || 'Something went wrong.';
-    }
-}
-
-function hideError() {
-    if (DOM.error) DOM.error.style.display = 'none';
-}
-
-function showContent() {
-    if (DOM.loading) DOM.loading.style.display = 'none';
-    if (DOM.error) DOM.error.style.display = 'none';
-    if (DOM.content) DOM.content.style.display = 'block';
-}
-
-// =====================================================
-// DATABASE LOADERS - Using listing_complete_view
-// =====================================================
-
-/**
- * Load listing from listing_complete_view
- * Enforces status = 'approved'
- * Uses shared client
- */
-async function loadListing(listingId) {
-    const client = window.supabase || window.biomeSupabase || window.supabaseClient;
-    if (!client) {
-        throw new Error('Supabase client not available');
-    }
+async function loadPropertyTypes() {
+    const client = getClient();
+    if (!client) return [];
 
     try {
         const { data, error } = await client
-            .from('listing_complete_view')
+            .from('property_types')
             .select('*')
-            .eq('listing_id', listingId)
-            .eq('status', 'approved')
-            .single();
+            .order('name', { ascending: true });
 
         if (error) {
-            console.error('Database error:', error);
-            throw new Error('Property not found or access denied.');
-        }
-
-        if (!data) {
-            throw new Error('Property not found.');
-        }
-
-        return data;
-    } catch (error) {
-        console.error('Failed to load listing:', error);
-        throw error;
-    }
-}
-
-/**
- * Load gallery from listing_media
- * Uses the shared client
- */
-async function loadGallery(listingId) {
-    const client = window.supabase || window.biomeSupabase || window.supabaseClient;
-    if (!client) {
-        console.warn('Supabase client not available for gallery');
-        return [];
-    }
-
-    try {
-        const { data, error } = await client
-            .from('listing_media')
-            .select('*')
-            .eq('listing_id', listingId)
-            .order('display_order', { ascending: true });
-
-        if (error) {
-            console.warn('Failed to load gallery:', error);
+            console.warn('Failed to load property types:', error);
             return [];
         }
 
         return data || [];
     } catch (error) {
-        console.warn('Failed to load gallery:', error);
+        console.warn('Failed to load property types:', error);
         return [];
     }
 }
 
-/**
- * Load seller from profiles
- * Uses the existing foreign key relationship
- */
-async function loadSeller(sellerId) {
-    const client = window.supabase || window.biomeSupabase || window.supabaseClient;
-    if (!client || !sellerId) {
-        return null;
-    }
+async function loadListings(page = 1, filters = {}) {
+    const client = getClient();
+    if (!client) return { data: [], total: 0 };
 
     try {
-        const { data, error } = await client
-            .from('profiles')
-            .select('*')
-            .eq('id', sellerId)
-            .single();
-
-        if (error) {
-            console.warn('Failed to load seller:', error);
-            return null;
-        }
-
-        return data;
-    } catch (error) {
-        console.warn('Failed to load seller:', error);
-        return null;
-    }
-}
-
-/**
- * Load similar listings from listing_complete_view
- */
-async function loadSimilarListings(listing) {
-    const client = window.supabase || window.biomeSupabase || window.supabaseClient;
-    if (!client || !listing) {
-        return [];
-    }
-
-    try {
-        const { data, error } = await client
+        let query = client
             .from('listing_complete_view')
-            .select('*')
-            .eq('status', 'approved')
-            .eq('property_type', listing.property_type)
-            .eq('city', listing.city)
-            .neq('listing_id', listing.listing_id)
-            .limit(4);
+            .select('*', { count: 'exact' })
+            .eq('status', 'approved');
+
+        // Apply filters
+        if (filters.search) {
+            query = query.ilike('title', `%${filters.search}%`);
+        }
+
+        if (filters.province) {
+            query = query.eq('province', filters.province);
+        }
+
+        if (filters.city) {
+            query = query.eq('city', filters.city);
+        }
+
+        if (filters.propertyType) {
+            query = query.eq('property_type', filters.propertyType);
+        }
+
+        if (filters.minPrice) {
+            query = query.gte('price', parseInt(filters.minPrice));
+        }
+
+        if (filters.maxPrice) {
+            query = query.lte('price', parseInt(filters.maxPrice));
+        }
+
+        // Apply sorting
+        switch (filters.sortBy) {
+            case 'price_asc':
+                query = query.order('price', { ascending: true });
+                break;
+            case 'price_desc':
+                query = query.order('price', { ascending: false });
+                break;
+            case 'created_at_desc':
+            default:
+                query = query.order('created_at', { ascending: false });
+                break;
+        }
+
+        // Apply pagination
+        const start = (page - 1) * 9;
+        const end = start + 9 - 1;
+        query = query.range(start, end);
+
+        const { data, error, count } = await query;
 
         if (error) {
-            console.warn('Failed to load similar listings:', error);
-            return [];
+            console.error('Failed to load listings:', error);
+            return { data: [], total: 0 };
         }
 
-        return data || [];
+        return { data: data || [], total: count || 0 };
     } catch (error) {
-        console.warn('Failed to load similar listings:', error);
-        return [];
+        console.error('Failed to load listings:', error);
+        return { data: [], total: 0 };
     }
 }
 
 // =====================================================
-// RENDERERS - Using shared helpers from utils.js
+// RENDERERS
 // =====================================================
 
-/**
- * Render breadcrumb
- */
-function renderBreadcrumb(listing) {
-    if (!listing || !DOM.breadcrumbName) return;
-    DOM.breadcrumbName.textContent = listing.title || 'Property';
-    document.title = `Biome | ${listing.title || 'Property Details'}`;
-}
-
-/**
- * Get safe image URL using shared helper
- */
-function getSafeImageUrl(storagePath) {
-    // Use shared helper if available
-    if (window.getPublicImageUrl) {
-        const url = window.getPublicImageUrl(storagePath);
-        return url || getPlaceholderImage();
-    }
-    
-    // Fallback implementation
-    if (!storagePath) return getPlaceholderImage();
-    
-    const client = window.supabase || window.biomeSupabase || window.supabaseClient;
-    if (!client) return getPlaceholderImage();
-    
-    try {
-        const { data } = client.storage
-            .from('listing-media')
-            .getPublicUrl(storagePath);
-        return data.publicUrl || getPlaceholderImage();
-    } catch (error) {
-        console.warn('Failed to get public URL:', error);
-        return getPlaceholderImage();
-    }
-}
-
-/**
- * Placeholder image
- */
-function getPlaceholderImage() {
-    return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600"%3E%3Crect width="800" height="600" fill="%23f3f4f6"/%3E%3Ctext x="400" y="300" font-family="Arial" font-size="24" fill="%239ca3af" text-anchor="middle"%3ENo Image Available%3C/text%3E%3C/svg%3E';
-}
-
-/**
- * Format price using shared helper if available
- */
-function formatPrice(price) {
-    if (window.formatCurrency) {
-        return window.formatCurrency(price);
-    }
-    
-    if (!price || price === 0) return 'Price on Request';
-    return new Intl.NumberFormat('en-ZA', {
-        style: 'currency',
-        currency: 'ZAR',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-    }).format(price);
-}
-
-/**
- * Format date using shared helper if available
- */
-function formatDate(dateString) {
-    if (window.formatDate) {
-        return window.formatDate(dateString);
-    }
-    
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-ZA', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
-}
-
-/**
- * Render gallery
- */
-function renderGallery(gallery) {
-    const container = DOM.gallery;
-    if (!container) return;
-
-    if (!gallery || gallery.length === 0) {
-        container.innerHTML = `
-            <div class="gallery-container">
-                <div class="gallery-main">
-                    <img src="${getPlaceholderImage()}" alt="No images available" loading="lazy">
-                </div>
-            </div>
-        `;
-        return;
-    }
-
-    // Find cover image or use first
-    let mainImage = gallery.find(item => item.is_cover) || gallery[0];
-    const mainImageUrl = getSafeImageUrl(mainImage.storage_path);
-
-    let thumbnailsHTML = gallery.map((item, index) => {
-        const thumbUrl = getSafeImageUrl(item.storage_path);
-        const isVideo = item.media_type === 'video';
-        return `
-            <button class="gallery-thumbnail ${index === 0 ? 'active' : ''}" 
-                    data-index="${index}" 
-                    data-type="${item.media_type || 'image'}"
-                    data-path="${item.storage_path || ''}"
-                    aria-label="View image ${index + 1}">
-                <img src="${thumbUrl}" alt="Thumbnail ${index + 1}" loading="lazy">
-                ${isVideo ? '<i class="fa-solid fa-play thumbnail-play-icon"></i>' : ''}
-            </button>
-        `;
-    }).join('');
-
-    container.innerHTML = `
-        <div class="gallery-container">
-            <div class="gallery-main" id="galleryMain">
-                <img src="${mainImageUrl}" alt="Property image" loading="lazy" id="galleryMainImage">
-                ${mainImage.media_type === 'video' ? '<div class="gallery-play-overlay"><i class="fa-solid fa-play"></i></div>' : ''}
-            </div>
-            <div class="gallery-thumbnails" id="galleryThumbnails">
-                ${thumbnailsHTML}
-            </div>
-        </div>
-    `;
-
-    // Register gallery events
-    registerGalleryEvents(container);
-}
-
-/**
- * Register gallery events
- */
-function registerGalleryEvents(container) {
-    const thumbnails = container.querySelectorAll('.gallery-thumbnail');
-    const mainContainer = document.getElementById('galleryMain');
-
-    if (!thumbnails.length || !mainContainer) return;
-
-    thumbnails.forEach(thumb => {
-        thumb.addEventListener('click', function() {
-            thumbnails.forEach(t => t.classList.remove('active'));
-            this.classList.add('active');
-
-            const path = this.dataset.path;
-            const type = this.dataset.type;
-            const url = getSafeImageUrl(path);
-
-            if (type === 'video') {
-                mainContainer.innerHTML = `
-                    <div class="gallery-video-container">
-                        <video controls autoplay>
-                            <source src="${url}" type="video/mp4">
-                            Your browser does not support the video tag.
-                        </video>
-                    </div>
-                `;
-            } else {
-                mainContainer.innerHTML = `
-                    <img src="${url}" alt="Property image" loading="lazy" id="galleryMainImage">
-                `;
-            }
-        });
-    });
-}
-
-/**
- * Render property header
- * Uses actual schema fields
- */
-function renderHeader(listing) {
-    const container = DOM.header;
-    if (!container || !listing) return;
-
-    // Build location string from available fields
-    const locationParts = [];
-    if (listing.address) locationParts.push(listing.address);
-    if (listing.suburb) locationParts.push(listing.suburb);
-    if (listing.city) locationParts.push(listing.city);
-    if (listing.province) locationParts.push(listing.province);
-    const locationDisplay = locationParts.join(', ');
-
-    container.innerHTML = `
-        <div class="property-header">
-            <h1 class="property-title">${listing.title || 'Untitled Property'}</h1>
-            <div class="property-price-row">
-                <span class="property-price">${formatPrice(listing.price)}</span>
-                <span class="property-type-badge-large">${listing.property_type || 'Property'}</span>
-            </div>
-            ${locationDisplay ? `
-                <div class="property-location-row">
-                    <i class="fa-solid fa-location-dot"></i>
-                    <span>${locationDisplay}</span>
-                </div>
-            ` : ''}
-            <div class="property-meta-row">
-                ${listing.created_at ? `<span><i class="fa-regular fa-calendar"></i> Listed: ${formatDate(listing.created_at)}</span>` : ''}
-                ${listing.views_count ? `<span><i class="fa-regular fa-eye"></i> ${listing.views_count} views</span>` : ''}
-            </div>
-        </div>
-    `;
-}
-
-/**
- * Render quick facts
- */
-function renderQuickFacts(listing) {
-    const container = DOM.quickFacts;
-    if (!container || !listing) return;
-
-    const facts = [
-        { icon: 'fa-solid fa-bed', label: 'Bedrooms', value: listing.bedrooms || 'N/A' },
-        { icon: 'fa-solid fa-bath', label: 'Bathrooms', value: listing.bathrooms || 'N/A' },
-        { icon: 'fa-solid fa-car', label: 'Parking', value: listing.parking || 'N/A' },
-        { icon: 'fa-solid fa-arrows-alt', label: 'Floor Area', value: listing.floor_size ? `${listing.floor_size}m²` : 'N/A' },
-        { icon: 'fa-solid fa-building', label: 'Property Type', value: listing.property_type || 'N/A' }
-    ];
-
-    container.innerHTML = `
-        <h2>Quick Facts</h2>
-        <div class="quick-facts-grid">
-            ${facts.map(fact => `
-                <div class="quick-fact-card">
-                    <i class="${fact.icon}"></i>
-                    <span class="fact-label">${fact.label}</span>
-                    <span class="fact-value">${fact.value}</span>
-                </div>
-            `).join('')}
-        </div>
-    `;
-}
-
-/**
- * Render description
- */
-function renderDescription(listing) {
-    const container = DOM.description;
-    if (!container || !listing) return;
-
-    const description = listing.description || 'No description provided.';
-
-    container.innerHTML = `
-        <h2>About This Property</h2>
-        <div class="property-description">
-            ${description.split('\n').map(para => {
-                if (para.trim() === '') return '';
-                return `<p>${para.trim()}</p>`;
-            }).join('')}
-        </div>
-    `;
-}
-
-/**
- * Render amenities - handles both array and string formats
- */
-function renderAmenities(listing) {
-    const container = DOM.amenities;
-    if (!container) return;
-
-    let amenities = [];
-    if (listing.amenities) {
-        try {
-            if (Array.isArray(listing.amenities)) {
-                amenities = listing.amenities;
-            } else if (typeof listing.amenities === 'string') {
-                amenities = listing.amenities.split(',').map(a => a.trim()).filter(a => a);
-            }
-        } catch (e) {
-            amenities = [];
-        }
-    }
-
-    if (amenities.length === 0) {
-        container.style.display = 'none';
-        return;
-    }
-
-    container.style.display = 'block';
-    container.innerHTML = `
-        <h2>Amenities</h2>
-        <div class="amenities-grid">
-            ${amenities.map(amenity => `
-                <span class="amenity-badge">
-                    <i class="fa-solid fa-check"></i> ${amenity}
-                </span>
-            `).join('')}
-        </div>
-    `;
-}
-
-/**
- * Render seller information
- */
-function renderSeller(seller) {
-    const container = DOM.seller;
-    if (!container) return;
-
-    if (!seller) {
-        container.style.display = 'none';
-        return;
-    }
-
-    container.style.display = 'block';
-    const avatarUrl = seller.avatar_url ? getSafeImageUrl(seller.avatar_url) : getPlaceholderImage();
-
-    container.innerHTML = `
-        <h2>Seller Information</h2>
-        <div class="seller-card">
-            <div class="seller-avatar">
-                <img src="${avatarUrl}" alt="${seller.full_name || 'Seller'}" loading="lazy">
-                ${seller.is_verified ? '<span class="verified-badge"><i class="fa-solid fa-check-circle"></i></span>' : ''}
-            </div>
-            <div class="seller-info">
-                <h3>${seller.full_name || 'Property Owner'}</h3>
-                ${seller.agency ? `<p class="seller-agency">${seller.agency}</p>` : ''}
-                ${seller.phone ? `<p class="seller-contact"><i class="fa-solid fa-phone"></i> ${seller.phone}</p>` : ''}
-                ${seller.email ? `<p class="seller-contact"><i class="fa-solid fa-envelope"></i> ${seller.email}</p>` : ''}
-                ${seller.is_verified ? '<p class="seller-verified"><i class="fa-solid fa-check-circle"></i> Verified Seller</p>' : ''}
-            </div>
-        </div>
-    `;
-}
-
-/**
- * Render location
- */
-function renderLocation(listing) {
-    const container = DOM.location;
-    if (!container || !listing) return;
-
-    const hasLocation = listing.province || listing.city || listing.suburb || listing.address;
-
-    if (!hasLocation) {
-        container.style.display = 'none';
-        return;
-    }
-
-    container.style.display = 'block';
-    container.innerHTML = `
-        <h2>Location</h2>
-        <div class="location-details">
-            ${listing.address ? `<p><i class="fa-solid fa-location-dot"></i> ${listing.address}</p>` : ''}
-            ${listing.suburb ? `<p><i class="fa-solid fa-location-dot"></i> ${listing.suburb}</p>` : ''}
-            ${listing.city ? `<p><i class="fa-solid fa-city"></i> ${listing.city}</p>` : ''}
-            ${listing.province ? `<p><i class="fa-solid fa-map"></i> ${listing.province}</p>` : ''}
-        </div>
-    `;
-}
-
-/**
- * Render similar listings - REUSES property card pattern
- */
-function renderSimilarListings(listings) {
-    const container = DOM.similar;
-    if (!container) return;
-
-    if (!listings || listings.length === 0) {
-        container.style.display = 'none';
-        return;
-    }
-
-    container.style.display = 'block';
-    container.innerHTML = `
-        <h2>Similar Listings</h2>
-        <div class="similar-grid">
-            ${listings.map(listing => renderSimilarCard(listing)).join('')}
-        </div>
-    `;
-
-    // Register click events
-    registerSimilarCardEvents(container);
-}
-
-/**
- * Render a similar listing card - reuses the property card pattern
- */
-function renderSimilarCard(listing) {
-    const imageUrl = getSafeImageUrl(listing.cover_image);
-    const price = formatPrice(listing.price);
+function renderPropertyCard(listing) {
+    const imageUrl = window.getSafeImageUrl(listing.cover_image);
+    const price = window.formatCurrency(listing.price);
     const location = listing.city || listing.suburb || 'Location';
 
     return `
-        <div class="property-card similar-card" data-listing-id="${listing.listing_id}" role="button" tabindex="0">
+        <div class="property-card" data-listing-id="${listing.listing_id}" role="button" tabindex="0">
             <div class="property-image">
                 <img src="${imageUrl}" alt="${listing.title || 'Property'}" loading="lazy">
                 <span class="property-type-badge">${listing.property_type || 'Property'}</span>
@@ -653,15 +191,39 @@ function renderSimilarCard(listing) {
     `;
 }
 
-/**
- * Register click events for similar cards
- */
-function registerSimilarCardEvents(container) {
-    container.querySelectorAll('.similar-card').forEach(card => {
+function renderListings(listings) {
+    const grid = DOM.grid;
+    if (!grid) return;
+
+    if (!listings || listings.length === 0) {
+        grid.style.display = 'none';
+        if (DOM.empty) DOM.empty.style.display = 'block';
+        if (DOM.error) DOM.error.style.display = 'none';
+        return;
+    }
+
+    grid.style.display = 'grid';
+    if (DOM.empty) DOM.empty.style.display = 'none';
+    if (DOM.error) DOM.error.style.display = 'none';
+
+    grid.innerHTML = listings.map(listing => renderPropertyCard(listing)).join('');
+
+    // Register click events
+    registerCardEvents(grid);
+}
+
+function registerCardEvents(container) {
+    container.querySelectorAll('.property-card').forEach(card => {
         const listingId = card.dataset.listingId;
+        if (!listingId) {
+            console.warn('Card missing listing_id');
+            return;
+        }
+
         card.addEventListener('click', () => {
             window.location.href = `property-details.html?id=${listingId}`;
         });
+
         card.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
@@ -671,99 +233,206 @@ function registerSimilarCardEvents(container) {
     });
 }
 
-// =====================================================
-// MAIN INITIALIZATION - FAIL FAST
-// =====================================================
+function renderPagination(totalItems, currentPage, itemsPerPage) {
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    ListingsState.totalPages = totalPages;
 
-async function init() {
-    console.log('🚀 Property Details initializing...');
+    const paginationContainer = DOM.pagination;
+    if (!paginationContainer) return;
 
-    // 1. Validate shared client exists
-    if (!validateSharedClient()) {
-        showError(
-            'Initialization Error',
-            'Unable to connect to Biome. Please refresh the page or try again later.'
-        );
+    if (totalPages <= 1) {
+        paginationContainer.innerHTML = '';
         return;
     }
 
-    // 2. Show loading state
-    showLoading();
+    let html = '<div class="pagination-controls">';
 
-    // 3. Get and validate listing ID
-    const listingId = getListingId();
-
-    if (!validateListingId(listingId)) {
-        showError(
-            'Invalid Property',
-            'The property ID provided is invalid. Please check the URL and try again.'
-        );
-        return;
+    // Previous button
+    if (currentPage > 1) {
+        html += `<button class="page-btn" data-page="${currentPage - 1}"><i class="fa-solid fa-chevron-left"></i></button>`;
     }
 
-    pageState.listingId = listingId;
+    // Page numbers
+    const maxVisible = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+
+    if (endPage - startPage < maxVisible - 1) {
+        startPage = Math.max(1, endPage - maxVisible + 1);
+    }
+
+    if (startPage > 1) {
+        html += `<button class="page-btn" data-page="1">1</button>`;
+        if (startPage > 2) {
+            html += `<span class="page-ellipsis">...</span>`;
+        }
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+        html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" data-page="${i}">${i}</button>`;
+    }
+
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            html += `<span class="page-ellipsis">...</span>`;
+        }
+        html += `<button class="page-btn" data-page="${totalPages}">${totalPages}</button>`;
+    }
+
+    // Next button
+    if (currentPage < totalPages) {
+        html += `<button class="page-btn" data-page="${currentPage + 1}"><i class="fa-solid fa-chevron-right"></i></button>`;
+    }
+
+    html += '</div>';
+    paginationContainer.innerHTML = html;
+
+    // Register pagination events
+    paginationContainer.querySelectorAll('.page-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const page = parseInt(btn.dataset.page);
+            if (page && page !== ListingsState.currentPage) {
+                ListingsState.currentPage = page;
+                loadAndRender();
+            }
+        });
+    });
+}
+
+// =====================================================
+// FILTER HANDLING
+// =====================================================
+
+function getFilters() {
+    return {
+        search: DOM.searchInput?.value || '',
+        province: DOM.provinceSelect?.value || '',
+        city: DOM.citySelect?.value || '',
+        propertyType: DOM.propertyTypeSelect?.value || '',
+        minPrice: DOM.minPriceSelect?.value || '',
+        maxPrice: DOM.maxPriceSelect?.value || '',
+        sortBy: 'created_at_desc'
+    };
+}
+
+function updateFilters() {
+    ListingsState.filters = getFilters();
+    ListingsState.currentPage = 1;
+    loadAndRender();
+}
+
+// =====================================================
+// MAIN LOAD FUNCTION
+// =====================================================
+
+async function loadAndRender() {
+    const loading = DOM.loading;
+    const grid = DOM.grid;
+    const empty = DOM.empty;
+    const error = DOM.error;
+
+    // Show loading
+    if (loading) loading.style.display = 'block';
+    if (grid) grid.style.display = 'none';
+    if (empty) empty.style.display = 'none';
+    if (error) error.style.display = 'none';
+
+    ListingsState.loading = true;
 
     try {
-        // 4. Load listing - THIS MUST SUCCEED
-        const listing = await loadListing(listingId);
-        pageState.listing = listing;
-
-        // 5. Render breadcrumb and header (immediate)
-        renderBreadcrumb(listing);
-        renderHeader(listing);
-
-        // 6. Render remaining property details
-        renderQuickFacts(listing);
-        renderDescription(listing);
-        renderAmenities(listing);
-        renderLocation(listing);
-
-        // 7. Show content immediately
-        showContent();
-
-        // 8. Load gallery (non-blocking)
-        loadGallery(listingId).then(gallery => {
-            pageState.gallery = gallery;
-            renderGallery(gallery);
-        }).catch(err => {
-            console.warn('Gallery load failed:', err);
-            renderGallery([]);
-        });
-
-        // 9. Load seller (non-blocking)
-        if (listing.owner_id || listing.profile_id) {
-            const sellerId = listing.owner_id || listing.profile_id;
-            loadSeller(sellerId).then(seller => {
-                pageState.seller = seller;
-                renderSeller(seller);
-            }).catch(err => {
-                console.warn('Seller load failed:', err);
-                renderSeller(null);
-            });
-        }
-
-        // 10. Load similar listings (non-blocking, after page render)
-        loadSimilarListings(listing).then(similar => {
-            pageState.similarListings = similar;
-            renderSimilarListings(similar);
-        }).catch(err => {
-            console.warn('Similar listings load failed:', err);
-            renderSimilarListings([]);
-        });
-
-        console.log('✅ Property details loaded successfully');
-
-    } catch (error) {
-        console.error('❌ Failed to load property:', error);
-        showError(
-            'Unable to Load Property',
-            error.message || 'Something went wrong. Please try again later.'
+        const { data, total } = await loadListings(
+            ListingsState.currentPage,
+            ListingsState.filters
         );
+
+        ListingsState.properties = data;
+        ListingsState.totalItems = total;
+
+        renderListings(data);
+        renderPagination(total, ListingsState.currentPage, ListingsState.itemsPerPage);
+
+        if (DOM.totalCount) DOM.totalCount.textContent = total;
+
+    } catch (err) {
+        console.error('Failed to load listings:', err);
+        if (error) error.style.display = 'block';
+        if (grid) grid.style.display = 'none';
+        if (empty) empty.style.display = 'none';
+        window.showToast('Failed to load listings. Please try again.', 'error');
+    } finally {
+        ListingsState.loading = false;
+        if (loading) loading.style.display = 'none';
     }
 }
 
 // =====================================================
-// START - Only when DOM is ready
+// INITIALIZATION
+// =====================================================
+
+async function init() {
+    console.log('🚀 Property Listings initializing...');
+
+    // Validate shared client
+    if (!window.validateSharedClient()) {
+        if (DOM.error) {
+            DOM.error.style.display = 'block';
+            DOM.error.innerHTML = `
+                <i class="fa-solid fa-triangle-exclamation empty-icon" style="color:var(--danger);"></i>
+                <h3>Unable to Connect</h3>
+                <p>Please refresh the page or try again later.</p>
+            `;
+        }
+        return;
+    }
+
+    // Load property types for filter dropdown
+    const types = await loadPropertyTypes();
+    ListingsState.propertyTypes = types;
+
+    if (DOM.propertyTypeSelect) {
+        types.forEach(type => {
+            const option = document.createElement('option');
+            option.value = type.name;
+            option.textContent = type.name;
+            DOM.propertyTypeSelect.appendChild(option);
+        });
+    }
+
+    // Set up filter events (debounced)
+    const debouncedUpdate = window.debounce(updateFilters, 300);
+
+    if (DOM.searchInput) {
+        DOM.searchInput.addEventListener('input', debouncedUpdate);
+    }
+
+    if (DOM.provinceSelect) {
+        DOM.provinceSelect.addEventListener('change', updateFilters);
+    }
+
+    if (DOM.citySelect) {
+        DOM.citySelect.addEventListener('change', updateFilters);
+    }
+
+    if (DOM.propertyTypeSelect) {
+        DOM.propertyTypeSelect.addEventListener('change', updateFilters);
+    }
+
+    if (DOM.minPriceSelect) {
+        DOM.minPriceSelect.addEventListener('change', updateFilters);
+    }
+
+    if (DOM.maxPriceSelect) {
+        DOM.maxPriceSelect.addEventListener('change', updateFilters);
+    }
+
+    // Load initial listings
+    await loadAndRender();
+
+    console.log('✅ Property Listings initialized');
+}
+
+// =====================================================
+// START
 // =====================================================
 
 document.addEventListener('DOMContentLoaded', init);
