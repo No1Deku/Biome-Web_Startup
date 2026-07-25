@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biome | Property Details</title>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+</head>
+<body>
+
+    <!-- =====================================================
+         NAVBAR
+    ====================================================== -->
+    <nav class="navbar" id="navbar" aria-label="Main navigation">
+        <div class="nav-container">
+            <a href="index.html" class="logo" aria-label="Biome Home">
+                <div class="logo-circle">B</div>
+                <h2>biome</h2>
+            </a>
+
+            <ul class="nav-links" id="navLinks" role="list">
+                <li><a href="index.html" class="nav-link">Home</a></li>
+                <li><a href="property-listings.html" class="nav-link active" aria-current="page">Explore</a></li>
+                <li><a href="index.html#owners" class="nav-link">Property Owners</a></li>
+            </ul>
+
+            <div class="nav-buttons" id="navButtons">
+                <!-- Populated by JavaScript based on auth state -->
+            </div>
+
+            <button class="hamburger" id="hamburgerBtn" aria-label="Toggle navigation" aria-expanded="false">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- =====================================================
+         PROPERTY DETAILS
+    ====================================================== -->
+    <main>
+        <div class="property-details-container" id="propertyDetailsContainer">
+
+            <!-- Breadcrumb -->
+            <nav class="breadcrumb" id="breadcrumb" aria-label="Breadcrumb">
+                <ol>
+                    <li><a href="index.html"><i class="fa-solid fa-house"></i> Home</a></li>
+                    <li><a href="property-listings.html">Listings</a></li>
+                    <li><span id="breadcrumbPropertyName">Loading...</span></li>
+                </ol>
+            </nav>
+
+            <!-- Loading State -->
+            <div id="loadingState" class="details-loading">
+                <div class="spinner"></div>
+                <p>Loading property details...</p>
+            </div>
+
+            <!-- Error State -->
+            <div id="errorState" class="details-error" style="display:none;">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <h2>Unable to Load Property</h2>
+                <p id="errorMessage">Something went wrong.</p>
+                <button class="btn btn-primary" onclick="location.reload()">
+                    <i class="fa-solid fa-rotate"></i> Retry
+                </button>
+                <a href="property-listings.html" class="btn btn-outline">
+                    <i class="fa-solid fa-arrow-left"></i> Back to Listings
+                </a>
+            </div>
+
+            <!-- Property Content -->
+            <div id="propertyContent" style="display:none;">
+
+                <!-- Back Button -->
+                <div class="details-back">
+                    <a href="property-listings.html" class="btn btn-outline">
+                        <i class="fa-solid fa-arrow-left"></i> Back to Listings
+                    </a>
+                </div>
+
+                <!-- Gallery Module -->
+                <section class="details-gallery" id="detailsGallery" aria-label="Property gallery">
+                    <!-- Rendered by JavaScript -->
+                </section>
+
+                <!-- Property Header -->
+                <section class="details-header" id="detailsHeader" aria-label="Property header">
+                    <!-- Rendered by JavaScript -->
+                </section>
+
+                <!-- Quick Facts -->
+                <section class="details-quick-facts" id="detailsQuickFacts" aria-label="Quick facts">
+                    <!-- Rendered by JavaScript -->
+                </section>
+
+                <!-- Description -->
+                <section class="details-description" id="detailsDescription" aria-label="Property description">
+                    <!-- Rendered by JavaScript -->
+                </section>
+
+                <!-- Amenities -->
+                <section class="details-amenities" id="detailsAmenities" aria-label="Amenities">
+                    <!-- Rendered by JavaScript -->
+                </section>
+
+                <!-- Seller Information -->
+                <section class="details-seller" id="detailsSeller" aria-label="Seller information">
+                    <!-- Rendered by JavaScript -->
+                </section>
+
+                <!-- Location -->
+                <section class="details-location" id="detailsLocation" aria-label="Location">
+                    <!-- Rendered by JavaScript -->
+                </section>
+
+                <!-- Similar Listings -->
+                <section class="details-similar" id="detailsSimilar" aria-label="Similar listings">
+                    <!-- Rendered by JavaScript -->
+                </section>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- =====================================================
+         FOOTER
+    ====================================================== -->
+    <footer class="footer" id="footer" aria-label="Site footer">
+        <div class="footer-container">
+            <div class="footer-brand">
+                <div class="footer-logo">
+                    <div class="logo-circle">B</div>
+                    <h2>biome</h2>
+                </div>
+                <p>A connected ecosystem of people and spaces. Find your place in the world.</p>
+            </div>
+
+            <div class="footer-links">
+                <h3>Explore</h3>
+                <a href="property-listings.html">All Properties</a>
+                <a href="property-listings.html?type=1">Residential</a>
+                <a href="property-listings.html?type=2">Commercial</a>
+                <a href="property-listings.html?type=3">Offices</a>
+            </div>
+
+            <div class="footer-links">
+                <h3>Account</h3>
+                <a href="sign-in.html">Sign In</a>
+                <a href="sign-up.html">Create Account</a>
+                <a href="seller-dashboard.html">Seller Dashboard</a>
+                <a href="buyer-dashboard.html">Buyer Dashboard</a>
+            </div>
+
+            <div class="footer-links">
+                <h3>Company</h3>
+                <a href="#">About</a>
+                <a href="#">Contact</a>
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms of Service</a>
+            </div>
+
+            <div class="footer-links">
+                <h3>Support</h3>
+                <a href="#">Help Centre</a>
+                <a href="#">Report Listing</a>
+                <a href="#">FAQs</a>
+                <a href="#">Contact Support</a>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p>&copy; 2026 Biome Technologies. All rights reserved.</p>
+            <div class="footer-bottom-links">
+                <a href="#">Privacy</a>
+                <a href="#">Terms</a>
+                <a href="#">Cookies</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+    <!-- Shared Supabase Client -->
+    <script src="supabase.js"></script>
+    <!-- Property Details Module -->
+    <script src="property-details.js"></script>
+</body>
+</html>
