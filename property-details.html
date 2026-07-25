@@ -5,17 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Biome | Property Details</title>
 
-    <!-- Styles -->
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="property-details.css">
 
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+    <!-- ===== 1. SUPABASE SDK - MUST LOAD FIRST ===== -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
-    <!-- =====================================================
-         NAVBAR
-    ====================================================== -->
+    <!-- ===== NAVBAR ===== -->
     <nav class="navbar" id="navbar" aria-label="Main navigation">
         <div class="nav-container">
             <a href="index.html" class="logo" aria-label="Biome Home">
@@ -29,9 +29,7 @@
                 <li><a href="index.html#owners" class="nav-link">Property Owners</a></li>
             </ul>
 
-            <div class="nav-buttons" id="navButtons">
-                <!-- Populated by JavaScript based on auth state -->
-            </div>
+            <div class="nav-buttons" id="navButtons"></div>
 
             <button class="hamburger" id="hamburgerBtn" aria-label="Toggle navigation" aria-expanded="false">
                 <span></span>
@@ -41,9 +39,7 @@
         </div>
     </nav>
 
-    <!-- =====================================================
-         PROPERTY DETAILS
-    ====================================================== -->
+    <!-- ===== PROPERTY DETAILS ===== -->
     <main>
         <div class="property-details-container" id="propertyDetailsContainer">
 
@@ -57,81 +53,49 @@
             </nav>
 
             <!-- Loading State -->
-            <div id="loadingState" class="details-loading">
+            <div id="detailsLoading" class="details-loading">
                 <div class="spinner"></div>
                 <p>Loading property details...</p>
             </div>
 
             <!-- Error State -->
-            <div id="errorState" class="details-error" style="display:none;">
+            <div id="detailsError" class="details-error" style="display:none;">
                 <i class="fa-solid fa-triangle-exclamation"></i>
-                <h2>Unable to Load Property</h2>
+                <h2 id="errorTitle">Unable to Load Property</h2>
                 <p id="errorMessage">Something went wrong.</p>
-                <button class="btn btn-primary" onclick="location.reload()">
-                    <i class="fa-solid fa-rotate"></i> Retry
-                </button>
-                <a href="property-listings.html" class="btn btn-outline">
-                    <i class="fa-solid fa-arrow-left"></i> Back to Listings
-                </a>
+                <div class="error-actions">
+                    <button class="btn btn-primary" onclick="location.reload()">
+                        <i class="fa-solid fa-rotate"></i> Retry
+                    </button>
+                    <a href="property-listings.html" class="btn btn-outline">
+                        <i class="fa-solid fa-arrow-left"></i> Back to Listings
+                    </a>
+                </div>
             </div>
 
             <!-- Property Content -->
             <div id="propertyContent" style="display:none;">
 
-                <!-- Back Button -->
                 <div class="details-back">
                     <a href="property-listings.html" class="btn btn-outline">
                         <i class="fa-solid fa-arrow-left"></i> Back to Listings
                     </a>
                 </div>
 
-                <!-- Gallery Module -->
-                <section class="details-gallery" id="detailsGallery" aria-label="Property gallery">
-                    <!-- Rendered by JavaScript -->
-                </section>
-
-                <!-- Property Header -->
-                <section class="details-header" id="detailsHeader" aria-label="Property header">
-                    <!-- Rendered by JavaScript -->
-                </section>
-
-                <!-- Quick Facts -->
-                <section class="details-quick-facts" id="detailsQuickFacts" aria-label="Quick facts">
-                    <!-- Rendered by JavaScript -->
-                </section>
-
-                <!-- Description -->
-                <section class="details-description" id="detailsDescription" aria-label="Property description">
-                    <!-- Rendered by JavaScript -->
-                </section>
-
-                <!-- Amenities -->
-                <section class="details-amenities" id="detailsAmenities" aria-label="Amenities">
-                    <!-- Rendered by JavaScript -->
-                </section>
-
-                <!-- Seller Information -->
-                <section class="details-seller" id="detailsSeller" aria-label="Seller information">
-                    <!-- Rendered by JavaScript -->
-                </section>
-
-                <!-- Location -->
-                <section class="details-location" id="detailsLocation" aria-label="Location">
-                    <!-- Rendered by JavaScript -->
-                </section>
-
-                <!-- Similar Listings -->
-                <section class="details-similar" id="detailsSimilar" aria-label="Similar listings">
-                    <!-- Rendered by JavaScript -->
-                </section>
+                <section class="details-gallery" id="detailsGallery"></section>
+                <section class="details-header" id="detailsHeader"></section>
+                <section class="details-quick-facts" id="detailsQuickFacts"></section>
+                <section class="details-description" id="detailsDescription"></section>
+                <section class="details-amenities" id="detailsAmenities"></section>
+                <section class="details-seller" id="detailsSeller"></section>
+                <section class="details-location" id="detailsLocation"></section>
+                <section class="details-similar" id="detailsSimilar"></section>
 
             </div>
         </div>
     </main>
 
-    <!-- =====================================================
-         FOOTER
-    ====================================================== -->
+    <!-- ===== FOOTER ===== -->
     <footer class="footer" id="footer" aria-label="Site footer">
         <div class="footer-container">
             <div class="footer-brand">
@@ -185,12 +149,12 @@
         </div>
     </footer>
 
-    <!-- Toast Notification Container -->
     <div id="toastContainer" class="toast-container" aria-live="polite"></div>
 
-    <!-- Shared Supabase Client -->
+    <!-- ===== 2. SHARED MODULES - LOAD IN ORDER ===== -->
     <script src="supabase.js"></script>
-    <!-- Property Details Module -->
+    <script src="utils.js"></script>
+    <script src="auth.js"></script>
     <script src="property-details.js"></script>
 </body>
 </html>
